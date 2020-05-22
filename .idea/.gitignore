@@ -11,3 +11,4 @@
 /modules.xml
 /vcs.xml
 *.env
+/sqldialects.xml
