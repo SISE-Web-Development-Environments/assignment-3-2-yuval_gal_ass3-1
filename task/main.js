@@ -1,4 +1,4 @@
-require("dotenv").config();
+var dotenv = require("dotenv").config();
 //#region express configures
 var express = require("express");
 var path = require("path");
