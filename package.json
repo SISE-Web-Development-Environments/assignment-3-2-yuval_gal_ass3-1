@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start_Task": "nodemon codes/task/main.js",
     "start_solution": "nodemon codes/solution/main.js",
     "start": "nodemon codes/solution/main.js"
   },
