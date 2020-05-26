@@ -15,18 +15,20 @@ router.get("/Information", async (req, res, next) => {
   }
 });
 
+//recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
 //#region example1 - make serach endpoint
-router.get("/search", async (req, res, next) => {
+router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
   try {
-    const { query, cuisine, diet, intolerances, number } = req.query;
+    const { food_name, num } = req.params;
+    const { cuisine, diet, intolerance } = req.query;
     const search_response = await axios.get(`${api_domain}/search`, {
       params: {
-        query: query,
-        cuisine: cuisine,
-        diet: diet,
-        intolerances: intolerances,
-        number: number,
-        instructionsRequired: true,
+        query: food_name,
+        // cuisine: cuisine,
+        // diet: diet,
+        // intolerances: intolerance,
+        number: parseInt(num),
+        // instructionsRequired: false,
         apiKey: process.env.spooncular_apiKey
       }
     });
@@ -36,7 +38,7 @@ router.get("/search", async (req, res, next) => {
       )
     );
     recipes = recipes.map((recipe) => recipe.data);
-    res.send({ data: recipes });
+    res.send(search_response.data );
   } catch (error) {
     next(error);
   }
@@ -50,6 +52,39 @@ function getRecipeInfo(id) {
       apiKey: process.env.spooncular_apiKey
     }
   });
+}
+//recipes/getRandomRecipeId?numberToRetrieve=5
+router.get("/getRandomRecipeId",async (req, res, next) => {
+  try {
+    let { numberToRetrieve } = req.query;
+    if(!numberToRetrieve)
+    {
+      numberToRetrieve = 1;
+    }
+    const search_response = await axios.get(`${api_domain}/random`, {
+      params: {
+        number: numberToRetrieve,
+        apiKey: process.env.spooncular_apiKey
+      }
+    });
+
+    let recipes = getIdsFromResult(search_response.data.recipes)
+
+    res.send(recipes );
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+function getIdsFromResult(search_results)
+{
+  let all_ids = [];
+  for (index in search_results)
+  {
+    all_ids.push(search_results[index].id);
+  }
+  return all_ids;
 }
 
 module.exports = router;

@@ -15,13 +15,14 @@ router.post("/Register", async (req, res, next) => {
 
     // add the new username
     let hash_password = bcrypt.hashSync(
-      req.body.password,
-      parseInt(process.env.bcrypt_saltRounds)
+        req.body.password,
+        parseInt(process.env.bcrypt_saltRounds)
     );
+
     await DButils.execQuery(
-      `INSERT INTO users VALUES (default, '${req.body.username}', '${hash_password}')`
+        `INSERT INTO users VALUES (default, '${req.body.username}', '${hash_password}', '${req.body.firstName}', '${req.body.lastName}', '${req.body.email}', '${req.body.profilePic}')`
     );
-    res.status(201).send({ message: "user created", success: true });
+    res.status(201).send();
   } catch (error) {
     next(error);
   }
@@ -46,12 +47,12 @@ router.post("/Login", async (req, res, next) => {
     }
 
     // Set cookie
-    req.session.user_id = user.user_id;
+    req.ass_session.user_id = user.user_id;
     // req.session.save();
     // res.cookie(session_options.cookieName, user.user_id, cookies_options);
 
     // return cookie
-    res.status(200).send({ message: "login succeeded", success: true });
+    res.status(200).send({ username: req.body.username});
   } catch (error) {
     next(error);
   }
