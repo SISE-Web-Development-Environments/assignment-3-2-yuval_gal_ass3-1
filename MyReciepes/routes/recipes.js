@@ -6,10 +6,47 @@ const api_domain = "https://api.spoonacular.com/recipes";
 
 router.get("/", (req, res) => res.send("im here"));
 
+function getStepsJson(steps) {
+  if(steps == null){
+    return [];
+  }
+  let instructions = [];
+  for( i in steps){
+    instructions.push("step" + steps[i].number+": "+steps[i].step)
+  }
+  return instructions;
+}
+
+async function getIngredientWidget(recipe_id) {
+  return axios.get(`${api_domain}/${recipe_id}/ingredientWidget.json`, {
+    params: {
+      apiKey: process.env.spooncular_apiKey
+    }
+  });
+}
+
+function getIngredientsJson(ingredients) {
+  if(ingredients == null){
+    return [];
+  }
+  let ingredientsJson = [];
+  for( i in ingredients){
+    ingredientsJson.push({name: ingredients[i].name , count: ingredients[i].amount.us.value +" "+ingredients[i].amount.us.unit})
+  }
+  return ingredientsJson;
+}
+
 router.get("/Information", async (req, res, next) => {
   try {
-    const recipe = await getRecipeInfo(req.query.recipe_id);
-    res.send({ data: recipe.data });
+    const recipeInformation = await getRecipeInfo(req.query.recipe_id);
+    const num_of_dishes = recipeInformation.data.servings;
+    const instructions = await getRecipeAnalyzedInstructions(req.query.recipe_id);
+    const ingredients = await getIngredientWidget(req.query.recipe_id);
+    let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
+    let jsonSteps= getStepsJson(instructions.data[0].steps);
+    res.send({ num_of_dishes: num_of_dishes ,
+      ingredients: jsonIngredients ,
+      instructions: jsonSteps });
   } catch (error) {
     next(error);
   }
@@ -53,6 +90,16 @@ function getRecipeInfo(id) {
     }
   });
 }
+
+function getRecipeAnalyzedInstructions(id) {
+  return axios.get(`${api_domain}/${id}/analyzedInstructions`, {
+    params: {
+      stepBreakdown: true,
+      apiKey: process.env.spooncular_apiKey
+    }
+  });
+}
+
 //recipes/getRandomRecipeId?numberToRetrieve=5
 router.get("/getRandomRecipeId",async (req, res, next) => {
   try {
@@ -75,7 +122,6 @@ router.get("/getRandomRecipeId",async (req, res, next) => {
     next(error);
   }
 });
-
 
 function getIdsFromResult(search_results)
 {
