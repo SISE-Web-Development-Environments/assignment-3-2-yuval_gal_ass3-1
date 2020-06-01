@@ -2,3 +2,5 @@
 /node_modules/
 /package-lock.json
 /.idea/inspectionProfiles/Project_Default.xml
+*.env
+.idea/dataSources.xml
