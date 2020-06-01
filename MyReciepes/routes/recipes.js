@@ -21,7 +21,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
   try {
     let { recId } = req.params;
     const recipe = await getRecipeInfo(recId);
-    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image } = recipe.data;
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipe.data;
 
     let watchedRecipe = false;
     let savedRecipe;
@@ -42,6 +42,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       });
     }
 
+    // res.send({ data: recipe.data})
     res.send({
       id: id,
       image_url: image,
@@ -51,6 +52,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       vegetarian: vegetarian,
       glutenFree: glutenFree,
       url: sourceUrl,
+      popularity: aggregateLikes,
       watchedRecipes: watchedRecipe
 
 
