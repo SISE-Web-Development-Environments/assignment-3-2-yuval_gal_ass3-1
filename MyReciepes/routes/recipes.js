@@ -2,20 +2,13 @@ var express = require("express");
 var router = express.Router();
 const DButils = require("../../modules/DButils");
 const axios = require("axios");
+const generic = require("./genericFunctions");
 
 const api_domain = "https://api.spoonacular.com/recipes";
 
 router.get("/", (req, res) => res.send("im here"));
 
-async function getWatchAndFavorite(recId, req) {
-  let watchedRecipe = false;
-  let savedRecipe = false;
-  const watchedRecipeTableName = "watchedRecipes";
-  const savedRecipeTableName = "favoriteRecipes";
-  watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
-  savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
-  return {watchedRecipe, savedRecipe};
-}
+
 
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
@@ -66,7 +59,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       aggregateLikes = 0
     }
 
-    let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(recId, req);
+    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req);
 
     // res.send({ data: recipe.data})
     res.send({
@@ -126,10 +119,10 @@ router.get("/Information", async (req, res, next) => {
     const ingredients = await getIngredientWidget(req.query.recipe_id);
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
-    let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(recId, req);
+    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
-      await updateWatchValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
+      await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
     let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipeInformation.data;
     res.send({
@@ -152,28 +145,9 @@ router.get("/Information", async (req, res, next) => {
   }
 });
 
-async function updateWatchValueForUserAndRecipe(db_table_name, recId, username) {
-  if (username) {
-    await DButils.execQuery(
-        `INSERT INTO ${db_table_name} VALUES ('${username}', '${recId}')`
-    );
-  }
-}
 
-async function is_recipe_in_db_for_user(db_table_name, recId, username) {
-  let result = false;
-  if (username) {
-    // IF there is a cookie, then find out if the user already watched this recipe
-    let watchedRecipes = await DButils.execQuery(`SELECT recipeID FROM ${db_table_name} where username = '${username}'`);
-    watchedRecipes.forEach((recipeIdDB, index, array) => {
-      let recIdUrl = parseInt(recId);
-      if (recIdUrl === recipeIdDB.recipeID) {
-        result = true;
-      }
-    });
-  }
-  return result;
-}
+
+
 
 
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg

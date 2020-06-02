@@ -2,6 +2,8 @@ var express = require("express");
 var router = express.Router();
 const DButils = require("../../modules/DButils");
 const bcrypt = require("bcrypt");
+const generic = require("./genericFunctions");
+
 
 router.post("/Register", async (req, res, next) => {
   try {
@@ -91,18 +93,35 @@ router.post("/Logout", function (req, res) {
 });
 
 
-router.post("/addRecipeToFavorites", function (req,res){
+router.post("/addRecipeToFavorites", async function (req,res,next){
   try{
-    const recipe_id_url = req.params;
+    const recipe_id_url = req.body.recID;
 
-    if(req.username && recipe_id_url)
+    if(req.username)
     {
-      let recipe_id = parseInt(recipe_id_url);
-
+      if(recipe_id_url) {
+        let recipe_id = parseInt(recipe_id_url);
+        let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe_id, req);
+        if (!savedRecipe) {
+          let favoriteTableName = "favoriteRecipes";
+          await generic.updateValueForUserAndRecipe(favoriteTableName, recipe_id, req.username);
+          res.status(201).send({message: "added successfully"});
+        } else {
+          res.status(200).send({message: "Recipe is already in your favorite"});
+        }
+      }
+      else
+      {
+        throw {status: 400, message: "Missing Recipe ID in the body"}
+      }
+    }
+    else
+    {
+      throw {status: 403, message: "User is not logged in"}
     }
 
   }catch (error) {
-    throw {status: 401}
+    next(error);
   }
 });
 
