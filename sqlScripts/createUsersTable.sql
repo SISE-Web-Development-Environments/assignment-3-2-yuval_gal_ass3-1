@@ -1,5 +1,5 @@
 CREATE TABLE [dbo].[users](
-	[username] [varchar](8) PRIMARY KEY NOT NULL UNIQUE,
+	[username] [varchar](8) PRIMARY KEY NOT NULL,
 	[password] [varchar](300) NOT NULL,
 	[firstName] [varchar](300) NOT NULL,
 	[lastName] [varchar](300) NOT NULL,

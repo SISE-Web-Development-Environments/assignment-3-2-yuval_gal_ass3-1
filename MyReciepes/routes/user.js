@@ -26,11 +26,10 @@ router.post("/Register", async (req, res, next) => {
     if(req.body.password.search(/\d/) === -1) {
       throw {status: 400, message: "The password should include at least one number"};
     }
-    // //Validate password - should include at least one special char
-    // let regex = /^[a-zA-Z0-9]*$]/;
-    //  if(regex.exec(req.body.password)){
-    //      throw { status: 400, message: "The password should include at least one special char" };
-    //  }
+    //Validate password - should include at least one special char
+     if(req.body.password.match(/^[A-Z,a-z,0-9]*$/)){
+         throw { status: 400, message: "The password should include at least one special char" };
+     }
     // username exists
     const users = await DButils.execQuery("SELECT username FROM users");
 
