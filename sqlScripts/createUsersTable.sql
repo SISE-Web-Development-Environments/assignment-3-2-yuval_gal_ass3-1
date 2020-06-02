@@ -5,7 +5,8 @@ CREATE TABLE [dbo].[users](
 	[firstName] [varchar](300) NOT NULL,
 	[lastName] [varchar](300) NOT NULL,
 	[email] [varchar](320) NOT NULL,
-	[profilePicUrl] [varchar](1024) NOT NULL
+	[profilePicUrl] [varchar](1024) NOT NULL,
+	[country] [varchar](300) NOT NULL
 )
 
 
