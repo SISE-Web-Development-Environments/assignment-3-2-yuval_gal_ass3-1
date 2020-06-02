@@ -5,16 +5,7 @@ const axios = require("axios");
 
 const api_domain = "https://api.spoonacular.com/recipes";
 
-// router.use(function requireLogin(req, res, next) {
-//   if (!req.user_id) {
-//     next({ status: 401, message: "unauthorized" });
-//   } else {
-//     next();
-//   }
-// });
-
-
-// router.get("/", (req, res) => res.send("im here"));
+router.get("/", (req, res) => res.send("im here"));
 
 async function getWatchAndFavorite(recId, req) {
   let watchedRecipe = false;
@@ -28,7 +19,6 @@ async function getWatchAndFavorite(recId, req) {
 
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
-
 
   try {
     let { recId } = req.params;
@@ -97,6 +87,79 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
   }
 });
 
+function getStepsJson(steps) {
+  if(steps == null){
+    return [];
+  }
+  let instructions = [];
+  for( i in steps){
+    instructions.push("step" + steps[i].number+": "+steps[i].step)
+  }
+  return instructions;
+}
+
+async function getIngredientWidget(recipe_id) {
+  return axios.get(`${api_domain}/${recipe_id}/ingredientWidget.json`, {
+    params: {
+      apiKey: process.env.spooncular_apiKey
+    }
+  });
+}
+
+function getIngredientsJson(ingredients) {
+  if(ingredients == null ){
+    return [];
+  }
+  let ingredientsJson = [];
+  for( i in ingredients){
+    ingredientsJson.push({name: ingredients[i].name , count: ingredients[i].amount.us.value +" "+ingredients[i].amount.us.unit})
+  }
+  return ingredientsJson;
+}
+
+router.get("/Information", async (req, res, next) => {
+  try {
+    const recipe_id = req.query.recipe_id;
+    const recipeInformation = await getRecipeInfo(req.query.recipe_id);
+    const num_of_dishes = recipeInformation.data.servings;
+    const instructions = await getRecipeAnalyzedInstructions(req.query.recipe_id);
+    const ingredients = await getIngredientWidget(req.query.recipe_id);
+    let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
+    let jsonSteps= getStepsJson(instructions.data[0].steps);
+    let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(recId, req);
+    const watchedRecipeTableName = "watchedRecipes";
+    if(watchedRecipe !== true){
+      await updateWatchValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
+    }
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipeInformation.data;
+    res.send({
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+      watched: watchedRecipe,
+      saved: savedRecipe,
+      num_of_dishes: num_of_dishes ,
+      ingredients: jsonIngredients ,
+      instructions: jsonSteps });
+  } catch (error) {
+    next(error);
+  }
+});
+
+async function updateWatchValueForUserAndRecipe(db_table_name, recId, username) {
+  if (username) {
+    await DButils.execQuery(
+        `INSERT INTO ${db_table_name} VALUES ('${username}', '${recId}')`
+    );
+  }
+}
+
 async function is_recipe_in_db_for_user(db_table_name, recId, username) {
   let result = false;
   if (username) {
@@ -152,6 +215,14 @@ function getRecipeInfo(id) {
   });
 }
 
+function getRecipeAnalyzedInstructions(id) {
+  return axios.get(`${api_domain}/${id}/analyzedInstructions`, {
+    params: {
+      stepBreakdown: true,
+      apiKey: process.env.spooncular_apiKey
+    }
+  });
+}
 
 //recipes/getRandomRecipeId?numberToRetrieve=5
 router.get("/getRandomRecipeId",async (req, res, next) => {
@@ -175,7 +246,6 @@ router.get("/getRandomRecipeId",async (req, res, next) => {
     next(error);
   }
 });
-
 
 function getIdsFromResult(search_results)
 {
