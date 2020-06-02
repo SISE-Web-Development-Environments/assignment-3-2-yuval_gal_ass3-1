@@ -8,8 +8,6 @@ const api_domain = "https://api.spoonacular.com/recipes";
 
 router.get("/", (req, res) => res.send("im here"));
 
-
-
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
 
@@ -145,25 +143,20 @@ router.get("/Information", async (req, res, next) => {
   }
 });
 
-
-
-
-
-
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
 //#region example1 - make serach endpoint
 router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
   try {
     const { food_name, num } = req.params;
     const { cuisine, diet, intolerance } = req.query;
+    let checkNumber = parseInt(num);
+    if((!(checkNumber === 5 || checkNumber===10 || checkNumber === 15))){
+      throw { status: 400, message: "You can request 5/10/15 recipes" };
+    }
     const search_response = await axios.get(`${api_domain}/search`, {
       params: {
         query: food_name,
-        // cuisine: cuisine,
-        // diet: diet,
-        // intolerances: intolerance,
         number: parseInt(num),
-        // instructionsRequired: false,
         apiKey: process.env.spooncular_apiKey
       }
     });
@@ -197,6 +190,36 @@ function getRecipeAnalyzedInstructions(id) {
     }
   });
 }
+
+function getPreviewInformation(recipePrev){
+  return recipePrev.map((recipePrev) =>{
+    const{
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+    } = recipePrev.data;
+    return{
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+    };
+  });
+
+
+}
+
 
 //recipes/getRandomRecipeId?numberToRetrieve=5
 router.get("/getRandomRecipeId",async (req, res, next) => {
