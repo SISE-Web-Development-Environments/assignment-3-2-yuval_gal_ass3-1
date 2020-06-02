@@ -69,4 +69,20 @@ router.post("/Logout", function (req, res) {
 
 });
 
+
+router.post("/addRecipeToFavorites", function (req,res){
+  try{
+    const recipe_id_url = req.params;
+
+    if(req.username && recipe_id_url)
+    {
+      let recipe_id = parseInt(recipe_id_url);
+
+    }
+
+  }catch (error) {
+    throw {status: 401}
+  }
+});
+
 module.exports = router;
