@@ -1,6 +1,5 @@
 CREATE TABLE [dbo].[users](
-	[user_id] [UNIQUEIDENTIFIER] PRIMARY KEY NOT NULL default NEWID(),
-	[username] [varchar](8) NOT NULL UNIQUE,
+	[username] [varchar](8) PRIMARY KEY NOT NULL UNIQUE,
 	[password] [varchar](300) NOT NULL,
 	[firstName] [varchar](300) NOT NULL,
 	[lastName] [varchar](300) NOT NULL,
