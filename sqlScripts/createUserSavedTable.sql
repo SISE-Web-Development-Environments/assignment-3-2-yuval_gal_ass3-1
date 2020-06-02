@@ -1,6 +1,6 @@
-CREATE TABLE [dbo].[savedRecipes](
+CREATE TABLE [dbo].[favoriteRecipe](
 	[username] [varchar](8) NOT NULL,
 	[recipeID] [int] NOT NULL,
-	CONSTRAINT Saved_Recipe PRIMARY KEY (username, recipeID)
+	CONSTRAINT Fav_Recipe PRIMARY KEY (username, recipeID)
 )
 

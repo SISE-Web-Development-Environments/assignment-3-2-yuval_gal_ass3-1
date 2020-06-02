@@ -69,7 +69,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     let watchedRecipe = false;
     let savedRecipe = false;
     const watchedRecipeTableName = "watchedRecipes";
-    const savedRecipeTableName = "savedRecipes";
+    const savedRecipeTableName = "favoriteRecipes";
     watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
     savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
 
