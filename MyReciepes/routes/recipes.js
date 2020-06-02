@@ -16,6 +16,16 @@ const api_domain = "https://api.spoonacular.com/recipes";
 
 // router.get("/", (req, res) => res.send("im here"));
 
+async function getWatchAndFavorite(recId, req) {
+  let watchedRecipe = false;
+  let savedRecipe = false;
+  const watchedRecipeTableName = "watchedRecipes";
+  const savedRecipeTableName = "favoriteRecipes";
+  watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
+  savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
+  return {watchedRecipe, savedRecipe};
+}
+
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
 
@@ -66,12 +76,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       aggregateLikes = 0
     }
 
-    let watchedRecipe = false;
-    let savedRecipe = false;
-    const watchedRecipeTableName = "watchedRecipes";
-    const savedRecipeTableName = "favoriteRecipes";
-    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
-    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
+    let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(recId, req);
 
     // res.send({ data: recipe.data})
     res.send({
