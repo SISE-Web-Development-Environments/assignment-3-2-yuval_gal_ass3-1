@@ -107,7 +107,7 @@ async function getIngredientWidget(recipe_id) {
 }
 
 function getIngredientsJson(ingredients) {
-  if(ingredients == null){
+  if(ingredients == null ){
     return [];
   }
   let ingredientsJson = [];
@@ -126,9 +126,8 @@ router.get("/Information", async (req, res, next) => {
     const ingredients = await getIngredientWidget(req.query.recipe_id);
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
-    let watchedRecipe = false;
+    let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(recId, req);
     const watchedRecipeTableName = "watchedRecipes";
-    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recipe_id, req.username);
     if(watchedRecipe !== true){
       await updateWatchValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
@@ -144,6 +143,7 @@ router.get("/Information", async (req, res, next) => {
       glutenFree: glutenFree,
       url: sourceUrl,
       watched: watchedRecipe,
+      saved: savedRecipe,
       num_of_dishes: num_of_dishes ,
       ingredients: jsonIngredients ,
       instructions: jsonSteps });
