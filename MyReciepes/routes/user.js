@@ -25,9 +25,10 @@ router.post("/Register", async (req, res, next) => {
       throw {status: 400, message: "The password should include at least one number"};
     }
     //Validate password - should include at least one special char
-    if(req.body.password.search(    ) === -1){
-        throw { status: 400, message: "The password should include at least one special char" };
-    }
+    let regex = /^[a-zA-Z0-9]*$]/;
+     if(regex.exec(req.body.password)){
+         throw { status: 400, message: "The password should include at least one special char" };
+     }
     // username exists
     const users = await DButils.execQuery("SELECT username FROM users");
 
@@ -39,7 +40,6 @@ router.post("/Register", async (req, res, next) => {
         req.body.password,
         parseInt(process.env.bcrypt_saltRounds)
     );
-
     await DButils.execQuery(
         `INSERT INTO users VALUES (default, '${req.body.username}', '${hash_password}', '${req.body.firstName}', '${req.body.lastName}', '${req.body.email}', '${req.body.profilePic}', '${req.body.country}')`
     );
