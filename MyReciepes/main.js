@@ -29,11 +29,11 @@ const recipes = require("./routes/recipes");
 
 //#region cookie middleware
 app.use(function (req, res, next) {
-  if (req.session && req.session.user_id) {
-    DButils.execQuery("SELECT user_id FROM users")
+  if (req.ass_session && req.ass_session.username) {
+    DButils.execQuery("SELECT username FROM users")
       .then((users) => {
-        if (users.find((x) => x.user_id === req.session.user_id)) {
-          req.user_id = req.session.user_id;
+        if (users.find((x) => x.username === req.ass_session.username)) {
+          req.username = req.ass_session.username;
         }
         next();
       })

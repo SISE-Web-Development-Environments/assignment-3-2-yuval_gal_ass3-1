@@ -5,6 +5,7 @@ const DButils = require("../../modules/DButils");
 router.use(function requireLogin(req, res, next) {
   if (!req.user_id) {
     next({ status: 401, message: "unauthorized" });
+    // next();
   } else {
     next();
   }
@@ -39,21 +40,21 @@ router.get("/personalRecipes", function (req, res) {
 //#region example2 - make add Recipe endpoint
 
 //#region complex
-router.use("/addPersonalRecipe", function (req, res, next) {
-  if (req.session && req.session.user_id) {
-    // or findOne Stored Procedure
-    DButils.execQuery("SELECT user_id FROM users").then((users) => {
-      if (users.find((x) => x.user_id === req.session.user_id)) {
-        req.user_id = user_id;
-        req.session.user_id = user_id; //refresh the session value
-        res.locals.user_id = user_id;
-        next();
-      } else throw { status: 401, message: "unauthorized" };
-    });
-  } else {
-    throw { status: 401, message: "unauthorized" };
-  }
-});
+// router.use("/addPersonalRecipe", function (req, res, next) {
+//   if (req.session && req.session.user_id) {
+//     // or findOne Stored Procedure
+//     DButils.execQuery("SELECT user_id FROM users").then((users) => {
+//       if (users.find((x) => x.user_id === req.session.user_id)) {
+//         req.user_id = user_id;
+//         req.session.user_id = user_id; //refresh the session value
+//         res.locals.user_id = user_id;
+//         next();
+//       } else throw { status: 401, message: "unauthorized" };
+//     });
+//   } else {
+//     throw { status: 401, message: "unauthorized" };
+//   }
+// });
 //#endregion
 
 //#region simple

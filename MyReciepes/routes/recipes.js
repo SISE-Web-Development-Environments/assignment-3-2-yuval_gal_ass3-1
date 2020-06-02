@@ -1,19 +1,68 @@
 var express = require("express");
 var router = express.Router();
+const DButils = require("../../modules/DButils");
 const axios = require("axios");
 
 const api_domain = "https://api.spoonacular.com/recipes";
 
-router.get("/", (req, res) => res.send("im here"));
+// router.use(function requireLogin(req, res, next) {
+//   if (!req.user_id) {
+//     next({ status: 401, message: "unauthorized" });
+//   } else {
+//     next();
+//   }
+// });
 
-router.get("/Information", async (req, res, next) => {
+
+// router.get("/", (req, res) => res.send("im here"));
+
+// recId can be only a single integer
+router.get("/preview/recId/:recId", async (req, res, next) => {
   try {
-    const recipe = await getRecipeInfo(req.query.recipe_id);
-    res.send({ data: recipe.data });
+    let { recId } = req.params;
+    const recipe = await getRecipeInfo(recId);
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipe.data;
+
+    let watchedRecipe = false;
+    let savedRecipe;
+    if(!req.username)
+    {
+      watchedRecipe = false;
+    }
+    else
+    {
+      // IF there is a cookie, then find out if the user already watched this recipe
+      let watchedRecipes = await DButils.execQuery("SELECT recipeID FROM watchedRecipes where username = " + '\'' + req.username + '\'');
+      watchedRecipes.forEach((recipeIdDB, index, array) => {
+          recIdUrl = parseInt(recId);
+          if(recIdUrl === recipeIdDB.recipeID)
+          {
+            watchedRecipe = true;
+          }
+      });
+    }
+
+    // res.send({ data: recipe.data})
+    res.send({
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes + ' min',
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+      popularity: aggregateLikes,
+      watchedRecipes: watchedRecipe
+
+
+    });
   } catch (error) {
     next(error);
   }
 });
+
+
 
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
 //#region example1 - make serach endpoint
@@ -53,6 +102,8 @@ function getRecipeInfo(id) {
     }
   });
 }
+
+
 //recipes/getRandomRecipeId?numberToRetrieve=5
 router.get("/getRandomRecipeId",async (req, res, next) => {
   try {
