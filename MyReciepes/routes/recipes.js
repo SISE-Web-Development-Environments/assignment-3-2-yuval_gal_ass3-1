@@ -18,50 +18,94 @@ const api_domain = "https://api.spoonacular.com/recipes";
 
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
+
+
   try {
     let { recId } = req.params;
     const recipe = await getRecipeInfo(recId);
     let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipe.data;
 
-    let watchedRecipe = false;
-    let savedRecipe;
-    if(!req.username)
+    if(!id)
     {
-      watchedRecipe = false;
+      id = recId
+    }
+    if(!title)
+    {
+      title = "Unkown"
+    }
+    if(vegetarian === undefined)
+    {
+      vegetarian = "Unkown"
+    }
+    if(vegan === undefined)
+    {
+      vegan = "Unkown"
+    }
+    if(glutenFree === undefined)
+    {
+      glutenFree = "Unkown"
+    }
+    if(!preparationMinutes)
+    {
+      preparationMinutes = "Unkown"
     }
     else
     {
-      // IF there is a cookie, then find out if the user already watched this recipe
-      let watchedRecipes = await DButils.execQuery("SELECT recipeID FROM watchedRecipes where username = " + '\'' + req.username + '\'');
-      watchedRecipes.forEach((recipeIdDB, index, array) => {
-          recIdUrl = parseInt(recId);
-          if(recIdUrl === recipeIdDB.recipeID)
-          {
-            watchedRecipe = true;
-          }
-      });
+      preparationMinutes = preparationMinutes + " min"
     }
+    if(!sourceUrl)
+    {
+      sourceUrl = "Unkown"
+    }
+    if(!image)
+    {
+      image = ""
+    }
+    if(!aggregateLikes)
+    {
+      aggregateLikes = 0
+    }
+
+    let watchedRecipe = false;
+    let savedRecipe = false;
+    const watchedRecipeTableName = "watchedRecipes";
+    const savedRecipeTableName = "savedRecipes";
+    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
+    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
 
     // res.send({ data: recipe.data})
     res.send({
       id: id,
       image_url: image,
       title: title,
-      prepTime: preparationMinutes + ' min',
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
       vegan: vegan,
       vegetarian: vegetarian,
       glutenFree: glutenFree,
       url: sourceUrl,
-      popularity: aggregateLikes,
-      watchedRecipes: watchedRecipe
-
-
+      watched: watchedRecipe,
+      saved: savedRecipe
     });
   } catch (error) {
     next(error);
   }
 });
 
+async function is_recipe_in_db_for_user(db_table_name, recId, username) {
+  let result = false;
+  if (username) {
+    // IF there is a cookie, then find out if the user already watched this recipe
+    let watchedRecipes = await DButils.execQuery(`SELECT recipeID FROM ${db_table_name} where username = '${username}'`);
+    watchedRecipes.forEach((recipeIdDB, index, array) => {
+      let recIdUrl = parseInt(recId);
+      if (recIdUrl === recipeIdDB.recipeID) {
+        result = true;
+      }
+    });
+  }
+  return result;
+}
 
 
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
