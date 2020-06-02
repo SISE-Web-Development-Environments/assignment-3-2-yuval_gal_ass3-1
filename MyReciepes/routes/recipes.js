@@ -122,13 +122,10 @@ router.get("/Information", async (req, res, next) => {
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
     let watchedRecipe = false;
-    let savedRecipe = false;
     const watchedRecipeTableName = "watchedRecipes";
-    const savedRecipeTableName = "savedRecipes";
     watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recipe_id, req.username);
-    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recipe_id, req.username);
     if(watchedRecipe !== true){
-      await updateWatchValueForUserAndRecipe(watchedRecipe, recipe_id, req.username);
+      await updateWatchValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
     let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipeInformation.data;
     res.send({
@@ -142,7 +139,6 @@ router.get("/Information", async (req, res, next) => {
       glutenFree: glutenFree,
       url: sourceUrl,
       watched: watchedRecipe,
-      saved: savedRecipe,
       num_of_dishes: num_of_dishes ,
       ingredients: jsonIngredients ,
       instructions: jsonSteps });
@@ -152,10 +148,9 @@ router.get("/Information", async (req, res, next) => {
 });
 
 async function updateWatchValueForUserAndRecipe(db_table_name, recId, username) {
-  let result = false;
   if (username) {
     await DButils.execQuery(
-        `INSERT INTO users VALUES ('${username}', '${recId}')`
+        `INSERT INTO ${db_table_name} VALUES ('${username}', '${recId}')`
     );
   }
 }
