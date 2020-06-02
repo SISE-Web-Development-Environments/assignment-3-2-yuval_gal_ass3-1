@@ -7,8 +7,29 @@ const generic = require("./genericFunctions");
 
 router.post("/Register", async (req, res, next) => {
   try {
-    // parameters exists
-    // valid parameters
+    // Checks id all the parameters sent
+    if(!req.body.username || !req.body.password || !req.body.firstName ||
+        !req.body.lastName || !req.body.email || !req.body.profilePic ||
+        !req.body.country){
+      throw { status: 400, message: "Not all registration parameters have been sent" };
+    }
+    // Valid parameters
+    //Validate Username - need to be between 3 and 8 chars
+    if(req.body.username.length < 3 || req.body.username.length >8){
+      throw { status: 400, message: "The username should be between 3 and 8 characters" };
+    }
+    //Validate password - need to be between 5 and 10 chars
+    if(req.body.password.length < 5 || req.body.password.length >10){
+      throw { status: 400, message: "The password should be between 5 and 10 characters" };
+    }
+    //Validate password - should include at least one number
+    if(req.body.password.search(/\d/) === -1) {
+      throw {status: 400, message: "The password should include at least one number"};
+    }
+    //Validate password - should include at least one special char
+     if(req.body.password.match(/^[A-Z,a-z,0-9]*$/)){
+         throw { status: 400, message: "The password should include at least one special char" };
+     }
     // username exists
     const users = await DButils.execQuery("SELECT username FROM users");
 
@@ -20,9 +41,8 @@ router.post("/Register", async (req, res, next) => {
         req.body.password,
         parseInt(process.env.bcrypt_saltRounds)
     );
-
     await DButils.execQuery(
-        `INSERT INTO users VALUES (default, '${req.body.username}', '${hash_password}', '${req.body.firstName}', '${req.body.lastName}', '${req.body.email}', '${req.body.profilePic}')`
+        `INSERT INTO users VALUES ('${req.body.username}', '${hash_password}', '${req.body.firstName}', '${req.body.lastName}', '${req.body.email}', '${req.body.profilePic}', '${req.body.country}')`
     );
     res.status(201).send();
   } catch (error) {
