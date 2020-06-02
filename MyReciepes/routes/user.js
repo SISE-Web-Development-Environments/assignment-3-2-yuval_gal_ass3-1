@@ -47,7 +47,7 @@ router.post("/Login", async (req, res, next) => {
     }
 
     // Set cookie
-    req.ass_session.user_id = user.user_id;
+    req.ass_session.username = user.username;
     // req.session.save();
     // res.cookie(session_options.cookieName, user.user_id, cookies_options);
 
@@ -59,8 +59,14 @@ router.post("/Login", async (req, res, next) => {
 });
 
 router.post("/Logout", function (req, res) {
-  req.session.reset(); // reset the session info --> send cookie when  req.session == undefined!!
-  res.send({ success: true, message: "logout succeeded" });
+  try {
+    req.ass_session.destroy(); // reset the session info --> send cookie when  req.session == undefined!!
+    res.status(200).send();
+  }
+  catch (error) {
+    throw { status: 401 }
+  }
+
 });
 
 module.exports = router;
