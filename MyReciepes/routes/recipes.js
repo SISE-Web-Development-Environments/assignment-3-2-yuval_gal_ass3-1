@@ -114,19 +114,51 @@ function getIngredientsJson(ingredients) {
 
 router.get("/Information", async (req, res, next) => {
   try {
+    const recipe_id = req.query.recipe_id;
     const recipeInformation = await getRecipeInfo(req.query.recipe_id);
     const num_of_dishes = recipeInformation.data.servings;
     const instructions = await getRecipeAnalyzedInstructions(req.query.recipe_id);
     const ingredients = await getIngredientWidget(req.query.recipe_id);
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
-    res.send({ num_of_dishes: num_of_dishes ,
+    let watchedRecipe = false;
+    let savedRecipe = false;
+    const watchedRecipeTableName = "watchedRecipes";
+    const savedRecipeTableName = "savedRecipes";
+    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recipe_id, req.username);
+    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recipe_id, req.username);
+    if(watchedRecipe !== true){
+      await updateWatchValueForUserAndRecipe(watchedRecipe, recipe_id, req.username);
+    }
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipeInformation.data;
+    res.send({
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+      watched: watchedRecipe,
+      saved: savedRecipe,
+      num_of_dishes: num_of_dishes ,
       ingredients: jsonIngredients ,
       instructions: jsonSteps });
   } catch (error) {
     next(error);
   }
 });
+
+async function updateWatchValueForUserAndRecipe(db_table_name, recId, username) {
+  let result = false;
+  if (username) {
+    await DButils.execQuery(
+        `INSERT INTO users VALUES ('${username}', '${recId}')`
+    );
+  }
+}
 
 async function is_recipe_in_db_for_user(db_table_name, recId, username) {
   let result = false;
