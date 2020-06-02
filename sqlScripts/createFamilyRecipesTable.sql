@@ -1,5 +1,5 @@
-CREATE TABLE [dbo].[Recipes](
-        [recipeID] [int] NOT NULL PRIMARY KEY IDENTITY (10000000,10000000),
+CREATE TABLE [dbo].[ourDbRecipes](
+        [recipeID] [int] NOT NULL PRIMARY KEY IDENTITY (10000000,1),
         [image_url] [varchar](300),
         [title] [varchar](100),
         [prepTime] [varchar](100),
@@ -19,7 +19,7 @@ CREATE TABLE [dbo].[recipeInstructions](
         [instruction_id] [int] NOT NULL IDENTITY (1,1),
         [step] [int] NOT NULL,
         [step_instruction] [varchar] NOT NULL,
-        [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES Recipes(recipeID),
+        [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
 
         CONSTRAINT PK_Instruction_Step PRIMARY KEY (instruction_id, step)
 )
@@ -28,14 +28,14 @@ CREATE TABLE [dbo].[recipeIngredients](
        [ingredients_id] [int] NOT NULL IDENTITY (1,1),
        [name] [int] NOT NULL,
        [count] [varchar] NOT NULL,
-       [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES Recipes(recipeID),
+       [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
 
        CONSTRAINT PK_Ingredients PRIMARY KEY (ingredients_id, name)
 )
 
 CREATE TABLE [dbo].[familyRecipes](
       [username] [varchar](8) NOT NULL,
-      [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES Recipes(recipeID),
+      [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
       [from_whom] [varchar](10),
       [special_time] [varchar](100),
       [family_image] [varchar](300)
