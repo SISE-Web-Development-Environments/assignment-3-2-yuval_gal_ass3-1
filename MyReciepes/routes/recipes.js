@@ -144,29 +144,83 @@ router.get("/Information", async (req, res, next) => {
 });
 
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
+function getAllIdsFromResponse(search_response) {
+  let ids = [];
+  let recipes = search_response.data.results;
+  for ( r in recipes) {
+    ids.push(recipes[r].id);
+  }
+  return ids;
+}
+
+function getRelevantData(response) {
+  return response.map((response) => {
+    const{
+      id,
+      image,
+      title,
+      preparationMinutes,
+      aggregateLikes,
+      vegan,
+      vegetarian,
+      glutenFree,
+      sourceUrl,
+    } = response.data;
+    return {
+      id: id,
+      image_url: image,
+      title: title,
+      prepTime: preparationMinutes,
+      popularity: aggregateLikes,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: sourceUrl,
+      watched:"",
+      saved:"",
+    }
+  })
+
+}
+
 //#region example1 - make serach endpoint
 router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
   try {
-    const { food_name, num } = req.params;
-    const { cuisine, diet, intolerance } = req.query;
+    const {food_name, num} = req.params;
     let checkNumber = parseInt(num);
-    if((!(checkNumber === 5 || checkNumber===10 || checkNumber === 15))){
-      throw { status: 400, message: "You can request 5/10/15 recipes" };
+    if ((!(checkNumber === 5 || checkNumber === 10 || checkNumber === 15))) {
+      throw {status: 400, message: "You can request 5/10/15 recipes"};
     }
-    const search_response = await axios.get(`${api_domain}/search`, {
-      params: {
-        query: food_name,
-        number: parseInt(num),
-        apiKey: process.env.spooncular_apiKey
+    let searchParams = {};
+    const queryList = ["diet", "cuisine", "intolerance"];
+    queryList.forEach((param) => {
+      if (req.query[param]) {
+        searchParams[param] = req.query[param];
       }
     });
-    let recipes = await Promise.all(
-      search_response.data.results.map((recipe_raw) =>
-        getRecipeInfo(recipe_raw.id)
-      )
-    );
-    recipes = recipes.map((recipe) => recipe.data);
-    res.send(search_response.data );
+    searchParams.number =checkNumber;
+    searchParams.query = food_name;
+    searchParams.instructionsRequire= true;
+    searchParams.apiKey = process.env.spooncular_apiKey;
+    const search_response = await axios.get(`${api_domain}/search`, {
+      params: searchParams,
+    });
+    let ids = getAllIdsFromResponse(search_response);
+    let promise = [] ;
+    for (i in ids){
+      promise.push(axios.get(`${api_domain}/${ids[i]}/information`, {
+        params: {
+          includeNutrition: false,
+          apiKey: process.env.spooncular_apiKey
+        }}));}
+    let response = await Promise.all(promise);
+    let relevantResponse = getRelevantData(response);
+    for( i in relevantResponse){
+      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(relevantResponse[i].id, req);
+      relevantResponse[i].watched=  watchedRecipe;
+      relevantResponse[i].saved=  savedRecipe;
+    }
+    res.send(relevantResponse);
   } catch (error) {
     next(error);
   }
