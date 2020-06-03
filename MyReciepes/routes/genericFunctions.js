@@ -10,7 +10,6 @@ async function getWatchAndFavorite(recId, req) {
     return {watchedRecipe, savedRecipe};
 }
 
-
 async function updateValueForUserAndRecipe(db_table_name, recId, username) {
     if (username) {
         await DButils.execQuery(
