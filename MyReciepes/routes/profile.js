@@ -13,41 +13,73 @@ router.use(function requireLogin(req, res, next) {
 
 
 
-router.get("/favorites", function (req, res) {
-  res.send(req.originalUrl);
+router.get("/favorites", async function (req, res, next) {
+  try {
+    const favorite_table_name = "favoriteRecipes";
+    const username = req.username;
+
+    let allRecipeIDs = await generic.getRecipesIdFromDB(favorite_table_name, username);
+    let recipe_array = await get_all_relevant_recipes(req, favorite_table_name);
+
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
 });
 
-router.get("/personalRecipes", function (req, res) {
-  res.send(req.originalUrl);
+async function get_all_relevant_recipes(username, table_name)
+{
+  try {
+    let allRecipeIDs = await generic.getRecipesIdFromDB(table_name, username);
+    return await get_recipes_details_from_db_by_IDs(allRecipeIDs);
+  }
+  catch (error) {
+    throw error;
+  }
+}
+router.get("/personalRecipes", async function (req, res, next) {
+
+  try {
+    const personal_table_name = "personalRecipes";
+
+    let recipe_array = await get_all_relevant_recipes(req.username, personal_table_name);
+
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
 });
 
-router.get("/FamilyRecipes", async function (req, res) {
-  const username = req.username;
-  const family_table_name = "familyRecipes";
+router.get("/FamilyRecipes", async function (req, res, next) {
+  try {
+    const username = req.username;
+    const family_table_name = "familyRecipes";
 
-  let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
+    let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
 
 
+    let recipe_array = await get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs);
+    let allUserFamilyRecipes = await DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`);
 
-  let recipe_array = await get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs);
-  let allUserFamilyRecipes = await DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`);
-
-  let index;
-  for (index = 0; index < allUserFamilyRecipes.length; index++)
-  {
-    let {recipeID, from_whom, special_time, family_image} = allUserFamilyRecipes[index];
-    for (let recipe of recipe_array)
-    {
-        if(recipe.id === parseInt(recipeID))
-        {
+    let index;
+    for (index = 0; index < allUserFamilyRecipes.length; index++) {
+      let {recipeID, from_whom, special_time, family_image} = allUserFamilyRecipes[index];
+      for (let recipe of recipe_array) {
+        if (recipe.id === parseInt(recipeID)) {
           recipe.from_whom = from_whom;
           recipe.special_time = special_time;
           recipe.family_image = family_image;
         }
+      }
     }
-  }
 
-  res.status(200).send(JSON.stringify(recipe_array));
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
 });
 
 async function getInstructionArrayFromData(recData) {
