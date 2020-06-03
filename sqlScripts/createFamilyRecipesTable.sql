@@ -16,18 +16,18 @@ CREATE TABLE [dbo].[ourDbRecipes](
 
 
 CREATE TABLE [dbo].[recipeInstructions](
-        [instruction_id] [int] NOT NULL IDENTITY (1,1),
+        [instruction_id] [int] NOT NULL,
         [step] [int] NOT NULL,
-        [step_instruction] [varchar] NOT NULL,
+        [step_instruction] [varchar](100),
         [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
 
         CONSTRAINT PK_Instruction_Step PRIMARY KEY (instruction_id, step)
 )
 
 CREATE TABLE [dbo].[recipeIngredients](
-       [ingredients_id] [int] NOT NULL IDENTITY (1,1),
-       [name] [int] NOT NULL,
-       [count] [varchar] NOT NULL,
+       [ingredients_id] [int] NOT NULL,
+       [name] [varchar](20) NOT NULL,
+       [count] [varchar](100),
        [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
 
        CONSTRAINT PK_Ingredients PRIMARY KEY (ingredients_id, name)
