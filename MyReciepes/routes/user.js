@@ -100,7 +100,7 @@ router.post("/addRecipeToFavorites", async function (req,res,next){
     {
       if(recipe_id_url) {
         let recipe_id = parseInt(recipe_id_url);
-        let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe_id, req);
+        let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe_id, req.username);
         if (!savedRecipe) {
           let favoriteTableName = "favoriteRecipes";
           await generic.updateValueForUserAndRecipe(favoriteTableName, recipe_id, req.username);

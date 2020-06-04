@@ -1,63 +1,23 @@
+require("dotenv").config();
 var express = require("express");
 var router = express.Router();
-const DButils = require("../../modules/DButils");
-const axios = require("axios");
 const generic = require("./genericFunctions");
 
+const axios = require("axios");
 const api_domain = "https://api.spoonacular.com/recipes";
 
 router.get("/", (req, res) => res.send("im here"));
+
+
 
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
 
   try {
     let { recId } = req.params;
-    const recipe = await getRecipeInfo(recId);
-    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipe.data;
+    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
 
-    if(!id)
-    {
-      id = recId
-    }
-    if(!title)
-    {
-      title = "Unkown"
-    }
-    if(vegetarian === undefined)
-    {
-      vegetarian = "Unkown"
-    }
-    if(vegan === undefined)
-    {
-      vegan = "Unkown"
-    }
-    if(glutenFree === undefined)
-    {
-      glutenFree = "Unkown"
-    }
-    if(!preparationMinutes)
-    {
-      preparationMinutes = "Unkown"
-    }
-    else
-    {
-      preparationMinutes = preparationMinutes + " min"
-    }
-    if(!sourceUrl)
-    {
-      sourceUrl = "Unkown"
-    }
-    if(!image)
-    {
-      image = ""
-    }
-    if(!aggregateLikes)
-    {
-      aggregateLikes = 0
-    }
-
-    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req);
+    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
 
     // res.send({ data: recipe.data})
     res.send({
@@ -65,7 +25,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       image_url: image,
       title: title,
       prepTime: preparationMinutes,
-      popularity: aggregateLikes,
+      popularity: popularity,
       vegan: vegan,
       vegetarian: vegetarian,
       glutenFree: glutenFree,
@@ -102,7 +62,7 @@ function getIngredientsJson(ingredients) {
     return [];
   }
   let ingredientsJson = [];
-  for( i in ingredients){
+  for(let i in ingredients){
     ingredientsJson.push({name: ingredients[i].name , count: ingredients[i].amount.us.value +" "+ingredients[i].amount.us.unit})
   }
   return ingredientsJson;
@@ -111,18 +71,16 @@ function getIngredientsJson(ingredients) {
 router.get("/Information", async (req, res, next) => {
   try {
     const recipe_id = req.query.recipe_id;
-    const recipeInformation = await getRecipeInfo(req.query.recipe_id);
-    const num_of_dishes = recipeInformation.data.servings;
     const instructions = await getRecipeAnalyzedInstructions(req.query.recipe_id);
     const ingredients = await getIngredientWidget(req.query.recipe_id);
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
-    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req);
+    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
       await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
-    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes } = recipeInformation.data;
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = await generic.getRecipeInfoOurVersion(recipe_id);
     res.send({
       id: id,
       image_url: image,
@@ -216,7 +174,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     let response = await Promise.all(promise);
     let relevantResponse = getRelevantData(response);
     for( i in relevantResponse){
-      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(relevantResponse[i].id, req);
+      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(relevantResponse[i].id, req.username);
       relevantResponse[i].watched=  watchedRecipe;
       relevantResponse[i].saved=  savedRecipe;
     }
@@ -227,14 +185,6 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
 });
 //#endregion
 
-function getRecipeInfo(id) {
-  return axios.get(`${api_domain}/${id}/information`, {
-    params: {
-      includeNutrition: false,
-      apiKey: process.env.spooncular_apiKey
-    }
-  });
-}
 
 function getRecipeAnalyzedInstructions(id) {
   return axios.get(`${api_domain}/${id}/analyzedInstructions`, {

@@ -1,13 +1,66 @@
+require("dotenv").config();
 const DButils = require("../../modules/DButils");
 
-async function getWatchAndFavorite(recId, req) {
+const axios = require("axios");
+const api_domain = "https://api.spoonacular.com/recipes";
+
+async function getWatchAndFavorite(recId, username) {
     let watchedRecipe = false;
     let savedRecipe = false;
     const watchedRecipeTableName = "watchedRecipes";
     const savedRecipeTableName = "favoriteRecipes";
-    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, req.username);
-    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, req.username);
+    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, username);
+    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, username);
     return {watchedRecipe, savedRecipe};
+}
+
+async function getRecipeInfoOurVersion(recId) {
+    const recipe = await getRecipeInfo(recId);
+    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, servings} = recipe.data;
+    let popularity = aggregateLikes;
+    let num_of_dishes = servings;
+    if (!id) {
+        id = recId;
+    }
+    if (!title) {
+        title = "Unkown";
+    }
+    if (vegetarian === undefined) {
+        vegetarian = "Unkown";
+    }
+    if (vegan === undefined) {
+        vegan = "Unkown";
+    }
+    if (glutenFree === undefined) {
+        glutenFree = "Unkown";
+    }
+    if (!preparationMinutes) {
+        preparationMinutes = "Unkown";
+    } else {
+        preparationMinutes = preparationMinutes + " min";
+    }
+    if (!sourceUrl) {
+        sourceUrl = "Unkown";
+    }
+    if (!image) {
+        image = "";
+    }
+    if (!popularity) {
+        popularity = 0;
+    }
+    if (!num_of_dishes) {
+        num_of_dishes = 0;
+    }
+    return {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity, num_of_dishes};
+}
+
+async function getRecipeInfo(id) {
+    return axios.get(`${api_domain}/${id}/information`, {
+        params: {
+            includeNutrition: false,
+            apiKey: process.env.spooncular_apiKey
+        }
+    });
 }
 
 async function updateValueForUserAndRecipe(db_table_name, recId, username) {
@@ -51,4 +104,4 @@ async function is_recipe_in_db_for_user(db_table_name, recId, username) {
 //     const join_array = tables_to_join.split(",");
 // }
 
-module.exports = {getWatchAndFavorite, updateValueForUserAndRecipe, getRecipesIdFromDB}
+module.exports = {getWatchAndFavorite, updateValueForUserAndRecipe, getRecipesIdFromDB, getRecipeInfo, getRecipeInfoOurVersion}

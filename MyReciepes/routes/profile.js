@@ -13,43 +13,135 @@ router.use(function requireLogin(req, res, next) {
 
 
 
-router.get("/favorites", function (req, res) {
-  res.send(req.originalUrl);
+router.get("/favorites", async function (req, res, next) {
+  try {
+    const favorite_table_name = "favoriteRecipes";
+    const username = req.username;
+
+    let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
+
+    for (let recipe of recipe_array) {
+      // get the instructions and ingredients of the current recipe
+      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe.id, username);
+      recipe.watched = watchedRecipe;
+      recipe.saved = savedRecipe;
+    }
+
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
 });
 
-router.get("/personalRecipes", function (req, res) {
-  res.send(req.originalUrl);
-});
+async function get_all_relevant_recipes(username, table_name)
+{
+  try {
+    let allRecipeIDs = await generic.getRecipesIdFromDB(table_name, username);
+    let recipe_array = [];
+    let recipe_id_in_our_db_array = [];
 
-router.get("/FamilyRecipes", async function (req, res) {
-  const username = req.username;
-  const family_table_name = "familyRecipes";
-
-  let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
-
-
-
-  let recipe_array = await get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs);
-  let allUserFamilyRecipes = await DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`);
-
-  let index;
-  for (index = 0; index < allUserFamilyRecipes.length; index++)
-  {
-    let {recipeID, from_whom, special_time, family_image} = allUserFamilyRecipes[index];
-    for (let recipe of recipe_array)
+    //TODO: go to DB only for IDs that are greater than 10million
+    for (let recipe of allRecipeIDs)
     {
-        if(recipe.id === parseInt(recipeID))
-        {
+      if(recipe.recipeID >= 10000000)
+      {
+        recipe_id_in_our_db_array.push(recipe.recipeID);
+      }
+      else
+      {
+        let our_format_recipe = await generic.getRecipeInfoOurVersion(recipe.recipeID);
+        recipe_array.push(our_format_recipe)
+      }
+    }
+    let recieved_array = await get_recipes_details_from_db_by_IDs(recipe_id_in_our_db_array);
+    for (let index in recieved_array)
+    {
+      recipe_array.push(recieved_array[index]);
+    }
+    return recipe_array;
+  }
+  catch (error) {
+    throw error;
+  }
+}
+router.get("/personalRecipes", async function (req, res, next) {
+
+  try {
+    const personal_table_name = "personalRecipes";
+
+    let recipe_array = await get_all_relevant_recipes(req.username, personal_table_name);
+
+    for (let recipe of recipe_array) {
+      // get the instructions and ingredients of the current recipe
+      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe.id,req.username);
+      recipe.watched = watchedRecipe;
+      recipe.saved = savedRecipe;
+    }
+
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
+});
+
+router.get("/FamilyRecipes", async function (req, res, next) {
+  try {
+    const username = req.username;
+    const family_table_name = "familyRecipes";
+
+    let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
+
+
+    let recipe_array = await get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs);
+    let allUserFamilyRecipes = await DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`);
+
+    for (let recipe of recipe_array) {
+      // get the instructions and ingredients of the current recipe
+      let {instructions, ingredients} = await get_instructions_and_ingredients(recipe.id);
+      recipe.instructions = instructions;
+      recipe.ingredients = ingredients;
+    }
+
+    let index;
+    for (index = 0; index < allUserFamilyRecipes.length; index++) {
+      let {recipeID, from_whom, special_time, family_image} = allUserFamilyRecipes[index];
+      for (let recipe of recipe_array) {
+        if (recipe.id === parseInt(recipeID)) {
+
           recipe.from_whom = from_whom;
           recipe.special_time = special_time;
           recipe.family_image = family_image;
         }
+      }
     }
-  }
 
-  res.status(200).send(JSON.stringify(recipe_array));
+    res.status(200).send(JSON.stringify(recipe_array));
+  }
+  catch (error) {
+    next(error);
+  }
 });
 
+
+async function get_instructions_and_ingredients(recipe_id)
+{
+  const ingredients_table_name = "recipeIngredients";
+  const instructions_table_name = "recipeInstructions";
+  let recData = await DButils.execQuery(`SELECT * FROM ${instructions_table_name} where recipeID = '${recipe_id}'`);
+
+  let instruction_array = await getInstructionArrayFromData(recData);
+
+
+  recData = await DButils.execQuery(`SELECT * FROM ${ingredients_table_name} where recipeID = '${recipe_id}'`);
+  let ingredient_array = await getIngredientArrayFromData(recData);
+
+  return {
+    instructions: instruction_array,
+    ingredients: ingredient_array
+  }
+}
 async function getInstructionArrayFromData(recData) {
   let instruction_array = [];
   var index;
@@ -77,23 +169,19 @@ async function getIngredientArrayFromData(recData) {
 
 async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
   var index;
-  const ingredients_table_name = "recipeIngredients";
-  const instructions_table_name = "recipeInstructions";
+
   const our_db_table_name = "ourDbRecipes";
 
   let recipe_array = [];
   for (index = 0; index < arrayOfIds.length; index++) {
     let recipeId = arrayOfIds[index];
     let recId = parseInt(recipeId.recipeID);
-    let recData = await DButils.execQuery(`SELECT * FROM ${instructions_table_name} where recipeID = '${recId}'`);
+    if(isNaN(recId))
+    {
+      recId = recipeId;
+    }
 
-    let instruction_array = await getInstructionArrayFromData(recData);
-
-
-    recData = await DButils.execQuery(`SELECT * FROM ${ingredients_table_name} where recipeID = '${recId}'`);
-    let ingredient_array = await getIngredientArrayFromData(recData);
-
-    recData = await DButils.execQuery(`SELECT * FROM ${our_db_table_name} where recipeID = '${recId}'`);
+    let recData = await DButils.execQuery(`SELECT * FROM ${our_db_table_name} where recipeID = '${recId}'`);
     let {recipeID, title, image_url, prepTime, popularity, vegan, vegetarian, glutenFree, url, num_of_dishes} = recData[0];
 
     recipe_array.push({
@@ -106,9 +194,7 @@ async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
       "vegeterian": vegetarian,
       "glutenFree": glutenFree,
       "url": url,
-      "num_of_dished": num_of_dishes,
-      "instructions": instruction_array,
-      "ingredients": ingredient_array
+      "num_of_dished": num_of_dishes
     })
 
   }
