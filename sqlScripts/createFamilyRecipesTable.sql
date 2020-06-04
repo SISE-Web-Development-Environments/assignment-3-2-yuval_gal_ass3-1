@@ -1,18 +1,19 @@
 CREATE TABLE [dbo].[ourDbRecipes](
         [recipeID] [int] NOT NULL PRIMARY KEY IDENTITY (10000000,1),
-        [image_url] [varchar](300),
-        [title] [varchar](100),
-        [prepTime] [varchar](100),
-        [popularity] [int],
-        [vegan] [BIT],
-        vegetarian [BIT],
-        [glutenFree] [BIT],
-        [url] [varchar](300),
-        [instructions_id] [int],
-        [ingredients_id] [int],
-        [num_of_dishes] [int],
+        [image_url] [varchar](300) NOT NULL,
+        [title] [varchar](100) NOT NULL,
+        [prepTime] [varchar](100) NOT NULL,
+        [popularity] [int] NOT NULL,
+        [vegan] [BIT] NOT NULL,
+        vegetarian [BIT] NOT NULL,
+        [glutenFree] [BIT] NOT NULL,
+        [url] [varchar](300) NOT NULL,
+        [num_of_dishes] [int] NOT NULL,
 
 )
+
+
+INSERT INTO [dbo].ourDbRecipes VALUES ("hujh", "title", "18 min", 178, TRUE, TRUE, TRUE, url, 9);
 
 
 CREATE TABLE [dbo].[recipeInstructions](
@@ -36,8 +37,8 @@ CREATE TABLE [dbo].[recipeIngredients](
 CREATE TABLE [dbo].[familyRecipes](
       [username] [varchar](8) NOT NULL,
       [recipeID] [int] NOT NULL FOREIGN KEY REFERENCES ourDbRecipes(recipeID),
-      [from_whom] [varchar](10),
-      [special_time] [varchar](100),
-      [family_image] [varchar](300)
+      [from_whom] [varchar](30) NOT NULL,
+      [special_time] [varchar](100) NOT NULL,
+      [family_image] [varchar](300) NOT NULL
       CONSTRAINT PK_Family_Recipe PRIMARY KEY (username, recipeID)
 )
