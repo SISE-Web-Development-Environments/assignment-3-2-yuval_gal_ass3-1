@@ -3,4 +3,3 @@ CREATE TABLE [dbo].[watchedRecipes](
 	[recipeID] [int] NOT NULL,
 	CONSTRAINT Watched_Recipe PRIMARY KEY (username, recipeID)
 )
-
