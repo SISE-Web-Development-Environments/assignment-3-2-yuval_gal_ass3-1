@@ -202,13 +202,41 @@ async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
 }
 
 
-router.post("/addPersonalRecipe", async (req, res, next) => {
+router.post("/addRecipe", async (req, res, next) => {
   try {
-    await DButils.execQuery(
-      `INSERT INTO recipes VALUES (default, '${req.username}', '${req.body.recipe_name}')`
+    const username = req.username;
+    let {image_url, title, prepTime, vegan, vegeterian, glutenFree, url, instructions, ingredients, num_of_dishes } = req.body;
+    let popularity = 0;
+    if(image_url === null || title === null || prepTime === null || url === null || instructions === null || ingredients === null || num_of_dishes === null)
+    {
+      throw {status: 401, message: "missing params"};
+    }
+
+    if(vegan === null)
+    {
+      vegan = false;
+    }
+    if(vegeterian === null)
+    {
+      vegeterian = false;
+    }
+    if(glutenFree === null)
+    {
+      glutenFree = false;
+    }
+
+    const personal_recipe_table_name = "personalRecipe";
+    const our_db_table_name = "ourDbRecipes";
+    const instruction_table_name = "recipeInstructions";
+    const ingredient_table_name = "recipeIngredients";
+    let id = await DButils.execQuery(
+      `INSERT INTO '${our_db_table_name}' VALUES (1, '${image_url}','${title}','${prepTime}','${popularity}','${vegan}','${vegeterian}','${glutenFree}','${url}')`
     );
+
+
     res.send({ sucess: true, cookie_valid: req.username && 1 });
-  } catch (error) {
+  }
+  catch (error) {
     next(error);
   }
 });
