@@ -5,32 +5,35 @@
 # Created by:
 ## Yuval Ben Eliezer (313581381) and Gal Rosenthal (312585268)
 
-1. [ Logo. ](#logo)
-1. [introduction. ](#introduction)
-1. [ API. ](#ourAPI)
-    1. [ The changes we made to the API are:. ](#changes)
-1. [ System users. ](#users)
+1. [ Logo ](#logo)
+1. [Introduction ](#introduction)
+1. [ API ](#ourAPI)
+    1. [ API Changes ](#changes)
+1. [ System users ](#users)
 
-<a name="introduction"></a>
-# introduction
+<a name="Introduction"></a>
+# Introduction
 <br>
-In this work, we were asked to develop the server side of a recipe site.
+<p>
+This is the backend to our Recipe Site, our backend is using an API written in openAPI 3.0.
+which you can find in this link <a href="https://app.swaggerhub.com/apis/yuval_gal/MyReciepes">our API</a>
+</p>
 
 <a name="ourAPI"></a>
 # API
- link to the api : https://app.swaggerhub.com/apis/yuval_gal/MyReciepes/1.0.1#/recipe/get_recipes_Search_food_name__food_name__num__num_of_recepies_
+ link to the api : https://app.swaggerhub.com/apis/yuval_gal/MyReciepes
 
 <a name="changes"></a>
-## The changes we made to the API are:
-1. We replaced the tags by the division of the routers we chose to make: user, profile, recipe
-2. In some endpoints we use cookies and some do not
-3. We changed some of the end-points of the return value to make working with the API more convenient, and accordingly we changed the examples
-4. We've added some more detail to the endpoints for the errors
-5. We changed the names of the end-points
+## API Changes:
+1. We replaced the tags to be like the routes we chose: user, profile, recipe.
+2. We decided in which endpoints we should use cookies and which dont..
+3. We changed some of the end-points return value to make it as the API, and accordingly we changed the examples.
+4. We've added more errors detail to the endpoints.
+5. We changed the names of the end-points.
  
 <a name="users"></a>
 # System users
-We added two users to the system, and each added 3 family recipes and 3 personal recipes
+We added two users to the system, and each have 3 family recipes and 3 personal recipes
 
 Username: yuval
 <br>
@@ -39,4 +42,4 @@ Password: yuval1!
 <br>
 Username: gal
 <br>
-Password:
+Password: Aa123456@
