@@ -33,7 +33,7 @@ which you can find in this link <a href="https://app.swaggerhub.com/apis/yuval_g
  
 <a name="users"></a>
 # System users
-We added two users to the system, and each added 3 family recipes and 3 personal recipes
+We added two users to the system, and each have 3 family recipes and 3 personal recipes
 
 Username: yuval
 <br>
