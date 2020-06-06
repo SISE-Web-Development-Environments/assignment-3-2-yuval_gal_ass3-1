@@ -17,19 +17,19 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     promises.push(generic.getRecipeInfoOurVersion(recId));
     promises.push(generic.getWatchAndFavorite(recId, req.username));
     let result = await Promise.all(promises);
-    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = result[0];
+    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = result[0];
     let {watchedRecipe, savedRecipe} = result[1];
     // res.send({ data: recipe.data})
     res.send({
       id: id,
-      image_url: image,
+      image_url: image_url,
       title: title,
-      prepTime: preparationMinutes,
+      prepTime: prepTime,
       popularity: popularity,
       vegan: vegan,
       vegetarian: vegetarian,
       glutenFree: glutenFree,
-      url: sourceUrl,
+      url: url,
       watched: watchedRecipe,
       saved: savedRecipe
     });
@@ -68,12 +68,12 @@ function getIngredientsJson(ingredients) {
   return ingredientsJson;
 }
 
-router.get("/Information", async (req, res, next) => {
+router.get("/recipe_page/recId/:recId", async (req, res, next) => {
   try {
-    const recipe_id = req.query.recipe_id;
+    const recipe_id = req.params.recId;
     let promises = [];
-    promises.push(getRecipeAnalyzedInstructions(req.query.recipe_id));
-    promises.push(getIngredientWidget(req.query.recipe_id));
+    promises.push(getRecipeAnalyzedInstructions(recipe_id));
+    promises.push(getIngredientWidget(recipe_id));
     promises.push(generic.getWatchAndFavorite(recipe_id, req.username));
     promises.push(generic.getRecipeInfoOurVersion(recipe_id));
     let result = await Promise.all(promises);
@@ -86,20 +86,20 @@ router.get("/Information", async (req, res, next) => {
     if(watchedRecipe !== true){
       await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
-    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = result[3];
+    let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
     res.send({
       id: id,
-      image_url: image,
+      image_url: image_url,
       title: title,
-      prepTime: preparationMinutes,
-      popularity: aggregateLikes,
+      prepTime: prepTime,
+      popularity: popularity,
       vegan: vegan,
       vegetarian: vegetarian,
       glutenFree: glutenFree,
-      url: sourceUrl,
+      url: url,
       watched: watchedRecipe,
       saved: savedRecipe,
-      num_of_dishes: num_of_dishes ,
+      num_of_dishes,
       ingredients: jsonIngredients ,
       instructions: jsonSteps });
   } catch (error) {

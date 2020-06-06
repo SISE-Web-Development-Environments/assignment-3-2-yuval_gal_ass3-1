@@ -84,7 +84,18 @@ async function get_all_relevant_recipes(username, table_name)
       }
       else
       {
-        recipe_array.push(recipe_from_promises);
+        let {id, title, image_url, prepTime, popularity, vegan, vegetarian, glutenFree, url} = recipe_from_promises;
+        recipe_array.push({
+          id,
+          title,
+          image_url,
+          prepTime,
+          popularity,
+          vegan,
+          vegetarian,
+          glutenFree,
+          url
+        });
       }
     })
 
