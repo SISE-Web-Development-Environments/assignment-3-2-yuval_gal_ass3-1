@@ -7,12 +7,6 @@ const generic = require("./genericFunctions");
 
 router.post("/Register", async (req, res, next) => {
   try {
-    // Checks id all the parameters sent
-    if(!req.body.username || !req.body.password || !req.body.firstName ||
-        !req.body.lastName || !req.body.email || !req.body.profilePic ||
-        !req.body.country){
-      throw { status: 400, message: "Not all registration parameters have been sent" };
-    }
     // Valid parameters
     validParameters(req);
     // username exists
@@ -77,9 +71,9 @@ router.post("/Logout", function (req, res) {
 });
 
 
-router.post("/addRecipeToFavorites", async function (req,res,next){
+router.post("/save_recipe_to_favorites", async function (req,res,next){
   try{
-    const recipe_id_url = req.body.recID;
+    const recipe_id_url = req.body.id;
 
     if(req.username)
     {

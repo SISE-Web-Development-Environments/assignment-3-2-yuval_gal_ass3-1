@@ -44,7 +44,7 @@ function getStepsJson(steps) {
   }
   let instructions = [];
   for( i in steps){
-    instructions.push("step" + steps[i].number+": "+steps[i].step)
+    instructions.push("Step" + steps[i].number+": "+steps[i].step)
   }
   return instructions;
 }
@@ -79,9 +79,24 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
     let result = await Promise.all(promises);
     const instructions = result[0];
     const ingredients = result[1];
+    let jsonIngredients,jsonSteps;
+    if(instructions.data.length !== 0)
+    {
+      jsonSteps = getStepsJson(instructions.data[0].steps);
+    }
+    else
+    {
+      jsonSteps = [];
+    }
+    if( ingredients.data.length !== 0)
+    {
+      jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
+    }
+    else
+    {
+      jsonIngredients = [];
+    }
     let {watchedRecipe, savedRecipe} = result[2];
-    let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
-    let jsonSteps= getStepsJson(instructions.data[0].steps);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
       await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
@@ -103,7 +118,7 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
       ingredients: jsonIngredients ,
       instructions: jsonSteps });
   } catch (error) {
-    next(error);
+    next({status: 400, message: "Could not find the recipe ID"});
   }
 });
 
@@ -153,7 +168,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     const {food_name, num} = req.params;
     let checkNumber = parseInt(num);
     if ((!(checkNumber === 5 || checkNumber === 10 || checkNumber === 15))) {
-      throw {status: 400, message: "You can request 5/10/15 recipes"};
+      throw {status: 400, message: "Wrong parameters given"};
     }
     let searchParams = {};
     const queryList = ["diet", "cuisine", "intolerance"];
