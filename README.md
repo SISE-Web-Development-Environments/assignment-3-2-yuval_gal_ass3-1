@@ -1,7 +1,7 @@
 ### Assignment 3.2
 <a name="logo"></a>
 
-![logo](logo.jpg)
+![logo](logo.PNG)
 # Created by:
 ## Yuval Ben Eliezer (313581381) and Gal Rosenthal (312585268)
 
