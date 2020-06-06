@@ -233,7 +233,7 @@ function getPreviewInformation(recipePrev){
 
 
 //recipes/getRandomRecipeId?numberToRetrieve=5
-router.get("/getRandomRecipeId",async (req, res, next) => {
+router.get("/get_random_recipe_id",async (req, res, next) => {
   try {
     let { numberToRetrieve } = req.query;
     if(!numberToRetrieve)

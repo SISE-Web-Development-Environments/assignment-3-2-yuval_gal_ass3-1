@@ -20,9 +20,8 @@ async function getWatchAndFavorite(recId, username) {
 
 async function getRecipeInfoOurVersion(recId) {
     const recipe = await getRecipeInfo(recId);
-    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, servings} = recipe.data;
+    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes} = recipe.data;
     let popularity = aggregateLikes;
-    let num_of_dishes = servings;
     if (!id) {
         id = recId;
     }
@@ -52,10 +51,18 @@ async function getRecipeInfoOurVersion(recId) {
     if (!popularity) {
         popularity = 0;
     }
-    if (!num_of_dishes) {
-        num_of_dishes = 0;
-    }
-    return {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity, num_of_dishes};
+
+    return {
+        id,
+        title,
+        vegetarian,
+        vegan,
+        glutenFree,
+        prepTime: preparationMinutes,
+        url: sourceUrl,
+        image_url: image,
+        popularity
+    };
 }
 
 async function getRecipeInfo(id) {
