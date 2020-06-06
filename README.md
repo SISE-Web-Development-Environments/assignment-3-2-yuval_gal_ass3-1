@@ -8,7 +8,7 @@
 1. [ Logo. ](#logo)
 1. [introduction. ](#introduction)
 1. [ API. ](#ourAPI)
-    1. [ The changes we made to previous assignment are:. ](#changes)
+    1. [ The changes we made to the API are:. ](#changes)
 1. [ System users. ](#users)
 
 <a name="introduction"></a>
@@ -21,9 +21,9 @@ In this work, we were asked to develop the server side of a recipe site.
  link to the api : https://app.swaggerhub.com/apis/yuval_gal/MyReciepes/1.0.1#/recipe/get_recipes_Search_food_name__food_name__num__num_of_recepies_
 
 <a name="changes"></a>
-## The changes we made to previous assignment are:
-1. We replaced the tags by the subdivision of the models we chose to make: user, profile, recipe
-2. In some endpoints we used cookies and some did not
+## The changes we made to the API are:
+1. We replaced the tags by the division of the routers we chose to make: user, profile, recipe
+2. In some endpoints we use cookies and some do not
 3. We changed some of the end-points of the return value to make working with the API more convenient, and accordingly we changed the examples
 4. We've added some more detail to the endpoints for the errors
 5. We changed the names of the end-points
