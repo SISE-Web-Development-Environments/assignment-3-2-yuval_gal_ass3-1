@@ -1,7 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
-const generic = require("./genericFunctions");
+const {getRecipeInfo, getRecipeInfoOurVersion, getWatchAndFavorite, updateValueForUserAndRecipe} = require("./genericFunctions");
 
 const axios = require("axios");
 const api_domain = "https://api.spoonacular.com/recipes";
@@ -15,8 +15,8 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
     //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
     let promises = [];
-    promises.push(generic.getRecipeInfoOurVersion(recId));
-    promises.push(generic.getWatchAndFavorite(recId, req.username));
+    promises.push(getRecipeInfoOurVersion(recId));
+    promises.push(getWatchAndFavorite(recId, req.username));
     let result = await Promise.all(promises);
     let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = result[0];
     let {watchedRecipe, savedRecipe} = result[1];
@@ -75,8 +75,8 @@ router.get("/Information", async (req, res, next) => {
     let promises = [];
     promises.push(getRecipeAnalyzedInstructions(req.query.recipe_id));
     promises.push(getIngredientWidget(req.query.recipe_id));
-    promises.push(generic.getWatchAndFavorite(recipe_id, req.username));
-    promises.push(generic.getRecipeInfoOurVersion(recipe_id));
+    promises.push(getWatchAndFavorite(recipe_id, req.username));
+    promises.push(getRecipeInfoOurVersion(recipe_id));
     let result = await Promise.all(promises);
     const instructions = result[0];
     const ingredients = result[1];
@@ -85,7 +85,7 @@ router.get("/Information", async (req, res, next) => {
     let jsonSteps= getStepsJson(instructions.data[0].steps);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
-      await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
+      await updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
     let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = result[3];
     res.send({
@@ -181,7 +181,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     let response = await Promise.all(promise);
     let relevantResponse = getRelevantData(response);
     for( i in relevantResponse){
-      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(relevantResponse[i].id, req.username);
+      let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(relevantResponse[i].id, req.username);
       relevantResponse[i].watched=  watchedRecipe;
       relevantResponse[i].saved=  savedRecipe;
     }
@@ -240,15 +240,29 @@ router.get("/getRandomRecipeId",async (req, res, next) => {
     {
       numberToRetrieve = 1;
     }
-    const search_response = await axios.get(`${api_domain}/random`, {
-      params: {
-        number: numberToRetrieve,
-        apiKey: process.env.spooncular_apiKey
+    let promises = [];
+    var search_response;
+    let recipeWithoutInstruction = false;
+    while (!recipeWithoutInstruction) {
+      recipeWithoutInstruction = true;
+      search_response = await axios.get(`${api_domain}/random`, {
+        params: {
+          number: numberToRetrieve,
+          apiKey: process.env.spooncular_apiKey
+        }
+      });
+      let recipe = search_response.data.recipes;
+      for (i in recipe) {
+        promises.push(getRecipeInfo(recipe[i].id));
       }
-    });
-
+      let result = await Promise.all(promises);
+      for (id in result){
+        if(result[id].data.analyzedInstructions.length === 0){
+          recipeWithoutInstruction = false;
+        }
+      }
+    }
     let recipes = getIdsFromResult(search_response.data.recipes)
-
     res.send(recipes );
   } catch (error) {
     next(error);
