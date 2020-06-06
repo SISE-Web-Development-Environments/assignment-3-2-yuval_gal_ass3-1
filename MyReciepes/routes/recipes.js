@@ -14,8 +14,8 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
     //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
     let promises = [];
-    promises.push(getRecipeInfoOurVersion(recId));
-    promises.push(getWatchAndFavorite(recId, req.username));
+    promises.push(generic.getRecipeInfoOurVersion(recId));
+    promises.push(generic.getWatchAndFavorite(recId, req.username));
     let result = await Promise.all(promises);
     let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = result[0];
     let {watchedRecipe, savedRecipe} = result[1];
@@ -74,8 +74,8 @@ router.get("/Information", async (req, res, next) => {
     let promises = [];
     promises.push(getRecipeAnalyzedInstructions(req.query.recipe_id));
     promises.push(getIngredientWidget(req.query.recipe_id));
-    promises.push(getWatchAndFavorite(recipe_id, req.username));
-    promises.push(getRecipeInfoOurVersion(recipe_id));
+    promises.push(generic.getWatchAndFavorite(recipe_id, req.username));
+    promises.push(generic.getRecipeInfoOurVersion(recipe_id));
     let result = await Promise.all(promises);
     const instructions = result[0];
     const ingredients = result[1];
@@ -84,7 +84,7 @@ router.get("/Information", async (req, res, next) => {
     let jsonSteps= getStepsJson(instructions.data[0].steps);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
-      await updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
+      await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
     let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = result[3];
     res.send({
@@ -180,7 +180,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     let response = await Promise.all(promise);
     let relevantResponse = getRelevantData(response);
     for( i in relevantResponse){
-      let {watchedRecipe, savedRecipe} = await getWatchAndFavorite(relevantResponse[i].id, req.username);
+      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(relevantResponse[i].id, req.username);
       relevantResponse[i].watched=  watchedRecipe;
       relevantResponse[i].saved=  savedRecipe;
     }
@@ -252,7 +252,7 @@ router.get("/getRandomRecipeId",async (req, res, next) => {
       });
       let recipe = search_response.data.recipes;
       for (i in recipe) {
-        promises.push(getRecipeInfo(recipe[i].id));
+        promises.push(generic.getRecipeInfo(recipe[i].id));
       }
       let result = await Promise.all(promises);
       for (id in result){
