@@ -8,17 +8,18 @@ const api_domain = "https://api.spoonacular.com/recipes";
 
 router.get("/", (req, res) => res.send("im here"));
 
-
-
 // recId can be only a single integer
 router.get("/preview/recId/:recId", async (req, res, next) => {
-
   try {
     let { recId } = req.params;
-    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
-
-    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
-
+    //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
+    //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
+    let promises = [];
+    promises.push(generic.getRecipeInfoOurVersion(recId));
+    promises.push(generic.getWatchAndFavorite(recId, req.username));
+    let result = await Promise.all(promises);
+    let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = result[0];
+    let {watchedRecipe, savedRecipe} = result[1];
     // res.send({ data: recipe.data})
     res.send({
       id: id,
@@ -71,16 +72,22 @@ function getIngredientsJson(ingredients) {
 router.get("/Information", async (req, res, next) => {
   try {
     const recipe_id = req.query.recipe_id;
-    const instructions = await getRecipeAnalyzedInstructions(req.query.recipe_id);
-    const ingredients = await getIngredientWidget(req.query.recipe_id);
+    let promises = [];
+    promises.push(getRecipeAnalyzedInstructions(req.query.recipe_id));
+    promises.push(getIngredientWidget(req.query.recipe_id));
+    promises.push(generic.getWatchAndFavorite(recipe_id, req.username));
+    promises.push(generic.getRecipeInfoOurVersion(recipe_id));
+    let result = await Promise.all(promises);
+    const instructions = result[0];
+    const ingredients = result[1];
+    let {watchedRecipe, savedRecipe} = result[2];
     let jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
     let jsonSteps= getStepsJson(instructions.data[0].steps);
-    let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
     const watchedRecipeTableName = "watchedRecipes";
     if(watchedRecipe !== true){
       await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
     }
-    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = await generic.getRecipeInfoOurVersion(recipe_id);
+    let { id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, num_of_dishes } = result[3];
     res.send({
       id: id,
       image_url: image,
