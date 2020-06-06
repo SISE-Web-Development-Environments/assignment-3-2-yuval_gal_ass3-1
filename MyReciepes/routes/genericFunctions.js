@@ -9,8 +9,12 @@ async function getWatchAndFavorite(recId, username) {
     let savedRecipe = false;
     const watchedRecipeTableName = "watchedRecipes";
     const savedRecipeTableName = "favoriteRecipes";
-    watchedRecipe = await is_recipe_in_db_for_user(watchedRecipeTableName, recId, username);
-    savedRecipe = await is_recipe_in_db_for_user(savedRecipeTableName, recId, username);
+    let promises = [];
+    promises.push(is_recipe_in_db_for_user(watchedRecipeTableName, recId, username));
+    promises.push(is_recipe_in_db_for_user(savedRecipeTableName, recId, username));
+    let result = await Promise.all(promises);
+    watchedRecipe = result[0];
+    savedRecipe = result[1];
     return {watchedRecipe, savedRecipe};
 }
 
