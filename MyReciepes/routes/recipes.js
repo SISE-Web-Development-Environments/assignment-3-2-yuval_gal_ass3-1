@@ -1,8 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
-const {getRecipeInfo, getRecipeInfoOurVersion, getWatchAndFavorite, updateValueForUserAndRecipe} = require("./genericFunctions");
-
+const generic = require("./genericFunctions");
 const axios = require("axios");
 const api_domain = "https://api.spoonacular.com/recipes";
 
