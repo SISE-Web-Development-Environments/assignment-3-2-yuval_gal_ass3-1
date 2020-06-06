@@ -19,6 +19,10 @@ router.get("/favorites", async function (req, res, next) {
     const username = req.username;
 
     let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
+    if (recipe_array.length === 0)
+    {
+      throw {status: 410, message: "Didn't find any Favorite Recipes"};
+    }
 
     for (let recipe of recipe_array) {
       // get the instructions and ingredients of the current recipe
@@ -41,7 +45,8 @@ async function get_all_relevant_recipes(username, table_name)
     let recipe_array = [];
     let recipe_id_in_our_db_array = [];
 
-    //TODO: go to DB only for IDs that are greater than 10million
+    let get_info_promises = [];
+
     for (let recipe of allRecipeIDs)
     {
       if(recipe.recipeID >= 10000000)
@@ -50,27 +55,67 @@ async function get_all_relevant_recipes(username, table_name)
       }
       else
       {
-        let our_format_recipe = await generic.getRecipeInfoOurVersion(recipe.recipeID);
-        recipe_array.push(our_format_recipe)
+        get_info_promises.push(generic.getRecipeInfoOurVersion(recipe.recipeID));
+        // let our_format_recipe = await generic.getRecipeInfoOurVersion(recipe.recipeID);
+        // recipe_array.push(our_format_recipe);
       }
     }
-    let recieved_array = await get_recipes_details_from_db_by_IDs(recipe_id_in_our_db_array);
-    for (let index in recieved_array)
-    {
-      recipe_array.push(recieved_array[index]);
-    }
+    get_info_promises.push(get_recipes_details_from_db_by_IDs(recipe_id_in_our_db_array));
+    let all_id_data = await Promise.all(get_info_promises);
+
+    all_id_data.map((recipe_from_promises) => {
+      if(recipe_from_promises instanceof Array)
+      {
+        // The result from the async functions can be an array
+        recipe_from_promises.map((in_recipe) => {
+          let {id, title, image_url, prepTime, popularity, vegan, vegetarian, glutenFree, url} = in_recipe;
+          recipe_array.push({
+            id,
+            title,
+            image_url,
+            prepTime,
+            popularity,
+            vegan,
+            vegetarian,
+            glutenFree,
+            url
+          });
+        })
+      }
+      else
+      {
+        let {id, title, image_url, prepTime, popularity, vegan, vegetarian, glutenFree, url} = recipe_from_promises;
+        recipe_array.push({
+          id,
+          title,
+          image_url,
+          prepTime,
+          popularity,
+          vegan,
+          vegetarian,
+          glutenFree,
+          url
+        });
+      }
+    })
+
     return recipe_array;
   }
   catch (error) {
     throw error;
   }
 }
-router.get("/personalRecipes", async function (req, res, next) {
+
+router.get("/personal_recipes", async function (req, res, next) {
 
   try {
     const personal_table_name = "personalRecipes";
 
     let recipe_array = await get_all_relevant_recipes(req.username, personal_table_name);
+    if (recipe_array.length === 0)
+    {
+      throw {status: 410, message: "Didn't find any owned Recipes"};
+    }
 
     for (let recipe of recipe_array) {
       // get the instructions and ingredients of the current recipe
@@ -86,18 +131,21 @@ router.get("/personalRecipes", async function (req, res, next) {
   }
 });
 
-router.get("/FamilyRecipes", async function (req, res, next) {
+
+router.get("/family_recipes", async function (req, res, next) {
   try {
     const username = req.username;
     const family_table_name = "familyRecipes";
 
     let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
 
+    let promises = [];
+    promises.push(get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs));
+    promises.push(DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`));
 
-    let recipe_array = await get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs);
-    let allUserFamilyRecipes = await DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`);
+    let result_from_promises = await Promise.all(promises);
 
-    for (let recipe of recipe_array) {
+    for (let recipe of result_from_promises[0]) {
       // get the instructions and ingredients of the current recipe
       let {instructions, ingredients} = await get_instructions_and_ingredients(recipe.id);
       recipe.instructions = instructions;
@@ -105,9 +153,9 @@ router.get("/FamilyRecipes", async function (req, res, next) {
     }
 
     let index;
-    for (index = 0; index < allUserFamilyRecipes.length; index++) {
-      let {recipeID, from_whom, special_time, family_image} = allUserFamilyRecipes[index];
-      for (let recipe of recipe_array) {
+    for (index = 0; index < result_from_promises[1].length; index++) {
+      let {recipeID, from_whom, special_time, family_image} = result_from_promises[1][index];
+      for (let recipe of result_from_promises[0]) {
         if (recipe.id === parseInt(recipeID)) {
 
           recipe.from_whom = from_whom;
@@ -117,7 +165,7 @@ router.get("/FamilyRecipes", async function (req, res, next) {
       }
     }
 
-    res.status(200).send(JSON.stringify(recipe_array));
+    res.status(200).send(JSON.stringify(result_from_promises[0]));
   }
   catch (error) {
     next(error);
@@ -129,31 +177,32 @@ async function get_instructions_and_ingredients(recipe_id)
 {
   const ingredients_table_name = "recipeIngredients";
   const instructions_table_name = "recipeInstructions";
-  let recData = await DButils.execQuery(`SELECT * FROM ${instructions_table_name} where recipeID = '${recipe_id}'`);
 
-  let instruction_array = await getInstructionArrayFromData(recData);
+  let promises_from_db = [];
+  promises_from_db.push(DButils.execQuery(`SELECT * FROM ${instructions_table_name} where recipeID = '${recipe_id}'`));
+  promises_from_db.push(DButils.execQuery(`SELECT * FROM ${ingredients_table_name} where recipeID = '${recipe_id}'`));
+  let relevant_data = await Promise.all(promises_from_db);
 
-
-  recData = await DButils.execQuery(`SELECT * FROM ${ingredients_table_name} where recipeID = '${recipe_id}'`);
-  let ingredient_array = await getIngredientArrayFromData(recData);
+  let instructions = getInstructionArrayFromData(relevant_data[0]);
+  let ingredients = getIngredientArrayFromData(relevant_data[1]);
 
   return {
-    instructions: instruction_array,
-    ingredients: ingredient_array
+    instructions: instructions,
+    ingredients: ingredients
   }
 }
-async function getInstructionArrayFromData(recData) {
+function getInstructionArrayFromData(recData) {
   let instruction_array = [];
   var index;
   for (index = 0; index < recData.length; index++)
   {
-    instruction_array.push("Step " + recData[index].step + ": " + recData[index].step_instruction );
+    instruction_array.push("Step" + recData[index].step + ": " + recData[index].step_instruction );
   }
 
   return instruction_array;
 }
 
-async function getIngredientArrayFromData(recData) {
+function getIngredientArrayFromData(recData) {
   let ingredient_array = [];
   var index;
   for (index = 0; index < recData.length; index++)
@@ -191,10 +240,10 @@ async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
       "prepTime": prepTime,
       "popularity": popularity,
       "vegan": vegan,
-      "vegeterian": vegetarian,
+      "vegetarian": vegetarian,
       "glutenFree": glutenFree,
       "url": url,
-      "num_of_dished": num_of_dishes
+      "num_of_dishes": num_of_dishes
     })
 
   }
@@ -202,13 +251,13 @@ async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
 }
 
 
-router.post("/addRecipe", async (req, res, next) => {
+router.post("/add_recipe", async (req, res, next) => {
   try {
     const username = req.username;
     let {image_url, title, prepTime, vegan, vegeterian, glutenFree, url, instructions, ingredients, num_of_dishes, from_whom, special_time} = req.body;
     let popularity = 0;
     if (image_url === undefined || title === undefined || prepTime === undefined || url === undefined || instructions === undefined || ingredients === undefined || num_of_dishes === undefined) {
-      throw {status: 401, message: "missing params"};
+      throw {status: 400, message: "Failed to create Recipe"};
     }
 
     if (vegan === undefined) {
@@ -255,25 +304,29 @@ router.post("/addRecipe", async (req, res, next) => {
     );
 
     let id = added_recipe[0].recipeID;
+    let add_instructions_promises = [];
     for(let index in instructions)
     {
       let step = instructions[index].split(":")[0];
       let index_of_p = step.indexOf("p");
       let step_number = step.substring(index_of_p+1);
       let instruction = instructions[index].split(":")[1];
-      await  DButils.execQuery(
-        `INSERT INTO ${instruction_table_name}(step, step_instruction, recipeID) VALUES (${step_number}, '${instruction}', ${id})`
-      );
+      add_instructions_promises.push(DButils.execQuery(
+          `INSERT INTO ${instruction_table_name}(step, step_instruction, recipeID) VALUES (${step_number}, '${instruction}', ${id})`
+      ));
     }
+    await Promise.all(add_instructions_promises);
 
+    let add_ingredient_promises = [];
     for(let ingredient_index in ingredients)
     {
       let name = ingredients[ingredient_index].name;
       let count = ingredients[ingredient_index].count;
-      await  DButils.execQuery(
+      add_ingredient_promises.push(DButils.execQuery(
         `INSERT INTO ${ingredient_table_name}(name, count, recipeID) VALUES ('${name}', '${count}', ${id})`
-      );
+      ));
     }
+    await Promise.all(add_ingredient_promises);
 
     const personal_recipe_table_name = "personalRecipes";
     const family_table_name = "familyRecipes";

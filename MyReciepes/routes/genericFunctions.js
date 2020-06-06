@@ -55,7 +55,17 @@ async function getRecipeInfoOurVersion(recId) {
     if (!num_of_dishes) {
         num_of_dishes = 0;
     }
-    return {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity, num_of_dishes};
+    return {
+        id,
+        title,
+        vegetarian,
+        vegan,
+        glutenFree,
+        prepTime: preparationMinutes,
+        url: sourceUrl,
+        image_url: image,
+        popularity,
+        num_of_dishes};
 }
 
 async function getRecipeInfo(id) {
