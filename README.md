@@ -1,7 +1,7 @@
 ### Assignment 3.2
 <a name="logo"></a>
 
-![Pacman Logo](images/logopacman.png)
+![logo](logo.jpg)
 # Created by:
 ## Yuval Ben Eliezer (313581381) and Gal Rosenthal (312585268)
 
