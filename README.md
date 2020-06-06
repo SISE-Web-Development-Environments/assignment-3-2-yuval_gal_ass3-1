@@ -6,13 +6,13 @@
 ## Yuval Ben Eliezer (313581381) and Gal Rosenthal (312585268)
 
 1. [ Logo ](#logo)
-1. [introduction ](#introduction)
+1. [Introduction ](#introduction)
 1. [ API ](#ourAPI)
-    1. [ API Changes: ](#changes)
+    1. [ API Changes ](#changes)
 1. [ System users ](#users)
 
-<a name="introduction"></a>
-# introduction
+<a name="Introduction"></a>
+# Introduction
 <br>
 <p>
 This is the backend to our Recipe Site, our backend is using an API written in openAPI 3.0.
