@@ -7,17 +7,17 @@
 
 1. [ Logo. ](#logo)
 1. [introduction. ](#introduction)
-1. [ our API. ](#our API)
+1. [ API. ](#our API)
     1. [ The changes we made to previous assignment are:. ](#changes)
 1. [ System users. ](#users)
 
 <a name="introduction"></a>
-### [introduction]
+### introduction
 <br>
 In this work, we were asked to develop the server side of a recipe site.
 
 <a name="our API"></a>
-# our API
+# API
  link to the api : https://app.swaggerhub.com/apis/yuval_gal/MyReciepes/1.0.1#/recipe/get_recipes_Search_food_name__food_name__num__num_of_recepies_
 
 <a name="changes"></a>
