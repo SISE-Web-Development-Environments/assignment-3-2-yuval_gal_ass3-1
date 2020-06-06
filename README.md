@@ -7,7 +7,7 @@
 
 1. [ Logo. ](#logo)
 1. [introduction. ](#introduction)
-1. [ API. ](#our API)
+1. [ API. ](#ourAPI)
     1. [ The changes we made to previous assignment are:. ](#changes)
 1. [ System users. ](#users)
 
@@ -16,7 +16,7 @@
 <br>
 In this work, we were asked to develop the server side of a recipe site.
 
-<a name="our API"></a>
+<a name="ourAPI"></a>
 # API
  link to the api : https://app.swaggerhub.com/apis/yuval_gal/MyReciepes/1.0.1#/recipe/get_recipes_Search_food_name__food_name__num__num_of_recepies_
 
