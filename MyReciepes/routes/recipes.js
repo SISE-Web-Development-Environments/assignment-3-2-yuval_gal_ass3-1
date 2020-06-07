@@ -14,10 +14,19 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
     //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
     let promises = [];
-    promises.push(generic.getRecipeInfoOurVersion(recId));
-    promises.push(generic.getWatchAndFavorite(recId, req.username));
+    if(recId < 10000000) {
+      promises.push(generic.getRecipeInfoOurVersion(recId));
+      promises.push(generic.getWatchAndFavorite(recId, req.username));
+    }
+    else
+    {
+      let array_of_id = [];
+      array_of_id.push(recId);
+      promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
+      promises.push(generic.getWatchAndFavorite(recId, req.username));
+    }
     let result = await Promise.all(promises);
-    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = result[0];
+    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
     let {watchedRecipe, savedRecipe} = result[1];
     // res.send({ data: recipe.data})
     res.send({
@@ -71,56 +80,109 @@ function getIngredientsJson(ingredients) {
 router.get("/recipe_page/recId/:recId", async (req, res, next) => {
   try {
     const recipe_id = req.params.recId;
-    let promises = [];
-    promises.push(getRecipeAnalyzedInstructions(recipe_id));
-    promises.push(getIngredientWidget(recipe_id));
-    promises.push(generic.getWatchAndFavorite(recipe_id, req.username));
-    promises.push(generic.getRecipeInfoOurVersion(recipe_id));
-    let result = await Promise.all(promises);
-    const instructions = result[0];
-    const ingredients = result[1];
-    let jsonIngredients,jsonSteps;
-    if(instructions.data.length !== 0)
-    {
-      jsonSteps = getStepsJson(instructions.data[0].steps);
+    if(recipe_id < 10000000) {
+      res.send(await get_recipe_page_api(recipe_id, req.username));
     }
     else
     {
-      jsonSteps = [];
+      res.send(await get_recipe_page_db(recipe_id, req.username));
     }
-    if( ingredients.data.length !== 0)
-    {
-      jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
-    }
-    else
-    {
-      jsonIngredients = [];
-    }
-    let {watchedRecipe, savedRecipe} = result[2];
-    const watchedRecipeTableName = "watchedRecipes";
-    if(watchedRecipe !== true){
-      await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipe_id, req.username);
-    }
-    let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
-    res.send({
-      id: id,
-      image_url: image_url,
-      title: title,
-      prepTime: prepTime,
-      popularity: popularity,
-      vegan: vegan,
-      vegetarian: vegetarian,
-      glutenFree: glutenFree,
-      url: url,
-      watched: watchedRecipe,
-      saved: savedRecipe,
-      num_of_dishes,
-      ingredients: jsonIngredients ,
-      instructions: jsonSteps });
+
   } catch (error) {
     next({status: 400, message: "Could not find the recipe ID"});
   }
 });
+
+
+async function get_recipe_page_db(recipeID, username)
+{
+  let promises = [];
+  let array_of_id = [];
+  array_of_id.push(recipeID);
+  promises.push(generic.get_instructions_and_ingredients(recipeID));
+  promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
+  promises.push(generic.getWatchAndFavorite(recipeID, username));
+  let result = await Promise.all(promises);
+  const instructions = result[0].instructions;
+  const ingredients = result[0].ingredients;
+  let {watchedRecipe, savedRecipe} = result[2];
+  const watchedRecipeTableName = "watchedRecipes";
+  if(watchedRecipe !== true){
+    await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
+  }
+  let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[1][0];
+
+  return ({
+    id,
+    image_url,
+    title,
+    prepTime,
+    popularity,
+    vegan,
+    vegetarian,
+    glutenFree,
+    url,
+    watchedRecipe,
+    savedRecipe,
+    num_of_dishes,
+    ingredients,
+    instructions});
+}
+
+/**
+ * Get Recipe Details from Spoonacular API
+ */
+async function get_recipe_page_api(recipeID, username)
+{
+  let promises = [];
+  promises.push(getRecipeAnalyzedInstructions(recipeID));
+  promises.push(getIngredientWidget(recipeID));
+  promises.push(generic.getWatchAndFavorite(recipeID, username));
+  promises.push(generic.getRecipeInfoOurVersion(recipeID));
+  let result = await Promise.all(promises);
+  const instructions = result[0];
+  const ingredients = result[1];
+  let jsonIngredients,jsonSteps;
+  if(instructions.data.length !== 0)
+  {
+    jsonSteps = getStepsJson(instructions.data[0].steps);
+  }
+  else
+  {
+    jsonSteps = [];
+  }
+  if( ingredients.data.length !== 0)
+  {
+    jsonIngredients = getIngredientsJson(ingredients.data.ingredients);
+  }
+  else
+  {
+    jsonIngredients = [];
+  }
+  let {watchedRecipe, savedRecipe} = result[2];
+  const watchedRecipeTableName = "watchedRecipes";
+  if(watchedRecipe !== true){
+    await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
+  }
+  let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
+  return {
+    id,
+    title,
+    vegetarian,
+    vegan,
+    glutenFree,
+    prepTime,
+    url,
+    image_url,
+    popularity,
+    num_of_dishes,
+    watchedRecipe,
+    savedRecipe,
+    ingredients: jsonIngredients ,
+    instructions: jsonSteps
+  }
+
+}
 
 //recipes/Search/food_name/5ergd/num/5?cuisine=American&diet=Ketogenic&intolerance=Egg
 function getAllIdsFromResponse(search_response) {
