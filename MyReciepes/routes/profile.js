@@ -60,7 +60,7 @@ async function get_all_relevant_recipes(username, table_name)
         // recipe_array.push(our_format_recipe);
       }
     }
-    get_info_promises.push(get_recipes_details_from_db_by_IDs(recipe_id_in_our_db_array));
+    get_info_promises.push(generic.get_recipes_details_from_db_by_IDs(recipe_id_in_our_db_array));
     let all_id_data = await Promise.all(get_info_promises);
 
     all_id_data.map((recipe_from_promises) => {
@@ -140,14 +140,14 @@ router.get("/family_recipes", async function (req, res, next) {
     let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
 
     let promises = [];
-    promises.push(get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs));
+    promises.push(generic.get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs));
     promises.push(DButils.execQuery(`SELECT * FROM ${family_table_name} where username = '${username}'`));
 
     let result_from_promises = await Promise.all(promises);
 
     for (let recipe of result_from_promises[0]) {
       // get the instructions and ingredients of the current recipe
-      let {instructions, ingredients} = await get_instructions_and_ingredients(recipe.id);
+      let {instructions, ingredients} = await generic.get_instructions_and_ingredients(recipe.id);
       recipe.instructions = instructions;
       recipe.ingredients = ingredients;
     }
@@ -173,82 +173,7 @@ router.get("/family_recipes", async function (req, res, next) {
 });
 
 
-async function get_instructions_and_ingredients(recipe_id)
-{
-  const ingredients_table_name = "recipeIngredients";
-  const instructions_table_name = "recipeInstructions";
 
-  let promises_from_db = [];
-  promises_from_db.push(DButils.execQuery(`SELECT * FROM ${instructions_table_name} where recipeID = '${recipe_id}'`));
-  promises_from_db.push(DButils.execQuery(`SELECT * FROM ${ingredients_table_name} where recipeID = '${recipe_id}'`));
-  let relevant_data = await Promise.all(promises_from_db);
-
-  let instructions = getInstructionArrayFromData(relevant_data[0]);
-  let ingredients = getIngredientArrayFromData(relevant_data[1]);
-
-  return {
-    instructions: instructions,
-    ingredients: ingredients
-  }
-}
-function getInstructionArrayFromData(recData) {
-  let instruction_array = [];
-  var index;
-  for (index = 0; index < recData.length; index++)
-  {
-    instruction_array.push("Step" + recData[index].step + ": " + recData[index].step_instruction );
-  }
-
-  return instruction_array;
-}
-
-function getIngredientArrayFromData(recData) {
-  let ingredient_array = [];
-  var index;
-  for (index = 0; index < recData.length; index++)
-  {
-    ingredient_array.push({
-      "name": recData[index].name,
-      "count": recData[index].count
-    });
-  }
-
-  return ingredient_array;
-}
-
-async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
-  var index;
-
-  const our_db_table_name = "ourDbRecipes";
-
-  let recipe_array = [];
-  for (index = 0; index < arrayOfIds.length; index++) {
-    let recipeId = arrayOfIds[index];
-    let recId = parseInt(recipeId.recipeID);
-    if(isNaN(recId))
-    {
-      recId = recipeId;
-    }
-
-    let recData = await DButils.execQuery(`SELECT * FROM ${our_db_table_name} where recipeID = '${recId}'`);
-    let {recipeID, title, image_url, prepTime, popularity, vegan, vegetarian, glutenFree, url, num_of_dishes} = recData[0];
-
-    recipe_array.push({
-      "id": recipeID,
-      "title": title,
-      "image_url": image_url,
-      "prepTime": prepTime,
-      "popularity": popularity,
-      "vegan": vegan,
-      "vegetarian": vegetarian,
-      "glutenFree": glutenFree,
-      "url": url,
-      "num_of_dishes": num_of_dishes
-    })
-
-  }
-  return recipe_array;
-}
 
 
 router.post("/add_recipe", async (req, res, next) => {
