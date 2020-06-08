@@ -4,6 +4,7 @@ var router = express.Router();
 const generic = require("./genericFunctions");
 const axios = require("axios");
 const api_domain = "https://api.spoonacular.com/recipes";
+const DButils = require("../../modules/DButils");
 
 router.get("/", (req, res) => res.send("im here"));
 
@@ -20,10 +21,7 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     }
     else
     {
-      let array_of_id = [];
-      array_of_id.push(recId);
-      promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
-      promises.push(generic.getWatchAndFavorite(recId, req.username));
+      res.status(404).send();
     }
     let result = await Promise.all(promises);
     let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
@@ -80,12 +78,35 @@ function getIngredientsJson(ingredients) {
 router.get("/recipe_page/recId/:recId", async (req, res, next) => {
   try {
     const recipe_id = req.params.recId;
+    const username = req.username;
     if(recipe_id < 10000000) {
-      res.send(await get_recipe_page_api(recipe_id, req.username));
+      res.send(await get_recipe_page_api(recipe_id, username));
     }
     else
     {
-      res.send(await get_recipe_page_db(recipe_id, req.username));
+      if(username)
+      {
+        let get_all_ids_of_user_promises = [];
+        let personal_table_name = "personalRecipes";
+        let family_table_name = "familyRecipes";
+        get_all_ids_of_user_promises.push(DButils.execQuery(`SELECT recipeID from ${personal_table_name} where username='${username}'`));
+        get_all_ids_of_user_promises.push(DButils.execQuery(`SELECT recipeID from ${family_table_name} where username='${username}'`));
+        let allIDs = await Promise.all(get_all_ids_of_user_promises);
+        let index;
+        let recipe_id_int = parseInt(recipe_id);
+        for (index = 0; index < allIDs.length ; index++)
+        {
+          for(let specific_recipe in allIDs[index])
+          {
+            if(allIDs[index][specific_recipe].recipeID === recipe_id_int){
+              res.send(await get_recipe_page_db(recipe_id, username));
+              return;
+            }
+          }
+        }
+
+      }
+      throw {status: 400, message: "Could not find the recipe ID"};
     }
 
   } catch (error) {
