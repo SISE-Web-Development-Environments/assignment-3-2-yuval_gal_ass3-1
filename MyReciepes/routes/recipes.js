@@ -12,33 +12,51 @@ router.get("/", (req, res) => res.send("im here"));
 router.get("/preview/recId/:recId", async (req, res, next) => {
   try {
     let { recId } = req.params;
+    let array = []
+    array.push(recId)
+    let recipeDetails = await generic.get_recipes_details_from_db_by_IDs(array)
     //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
     //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
-    let promises = [];
-    if(recId < 10000000) {
-      promises.push(generic.getRecipeInfoOurVersion(recId));
-      promises.push(generic.getWatchAndFavorite(recId, req.username));
-    }
-    else
-    {
-      res.status(404).send();
-    }
-    let result = await Promise.all(promises);
-    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
-    let {watchedRecipe, savedRecipe} = result[1];
+    // let promises = [];
+    // if(recId < 10000000) {
+    //   promises.push(generic.getRecipeInfoOurVersion(recId));
+    //   promises.push(generic.getWatchAndFavorite(recId, req.username));
+    // }
+    // else
+    // {
+    //   res.status(404).send();
+    // }
+    // let result = await Promise.all(promises);
+    // let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
+    // let {watchedRecipe, savedRecipe} = result[1];
     // res.send({ data: recipe.data})
+    /**
+     * {
+     * "id": 65463,
+     * "image_url": "https://spoonacular.com/recipeImages/65463-556x370.jpg",
+     * "title": "Oreo Muffins",
+     * "prepTime": "Unkown",
+     * "popularity": 5,
+     * "vegan": false,
+     * "vegetarian": true,
+     * "glutenFree": false,
+     * "url": "http://foodbabbles.com/2012/01/02/oreo-muffins/",
+     * "watched": false,
+     * "saved": false
+     * }
+     */
     res.send({
-      id: id,
-      image_url: image_url,
-      title: title,
-      prepTime: prepTime,
-      popularity: popularity,
-      vegan: vegan,
-      vegetarian: vegetarian,
-      glutenFree: glutenFree,
-      url: url,
-      watched: watchedRecipe,
-      saved: savedRecipe
+      id: recipeDetails[0].id,
+      image_url: recipeDetails[0].image_url,
+      title: recipeDetails[0].title,
+      prepTime: recipeDetails[0].prepTime,
+      popularity: recipeDetails[0].popularity,
+      vegan: recipeDetails[0].vegan,
+      vegetarian: recipeDetails[0].vegetarian,
+      glutenFree: recipeDetails[0].glutenFree,
+      url: recipeDetails[0].url,
+      watched: false,
+      saved: false
     });
   } catch (error) {
     next(error);
@@ -340,27 +358,33 @@ router.get("/get_random_recipe_id",async (req, res, next) => {
     let promises = [];
     var search_response;
     let recipeWithoutInstruction = false;
-    while (!recipeWithoutInstruction) {
-      recipeWithoutInstruction = true;
-      search_response = await axios.get(`${api_domain}/random`, {
-        params: {
-          number: numberToRetrieve,
-          apiKey: process.env.spooncular_apiKey
-        }
-      });
-      let recipe = search_response.data.recipes;
-      for (i in recipe) {
-        promises.push(generic.getRecipeInfo(recipe[i].id));
-      }
-      let result = await Promise.all(promises);
-      for (id in result){
-        if(result[id].data.analyzedInstructions.length === 0){
-          recipeWithoutInstruction = false;
-        }
-      }
+    // while (!recipeWithoutInstruction) {
+    //   recipeWithoutInstruction = true;
+    //   search_response = await axios.get(`${api_domain}/random`, {
+    //     params: {
+    //       number: numberToRetrieve,
+    //       apiKey: process.env.spooncular_apiKey
+    //     }
+    //   });
+    //   let recipe = search_response.data.recipes;
+    //   for (i in recipe) {
+    //     promises.push(generic.getRecipeInfo(recipe[i].id));
+    //   }
+    //   let result = await Promise.all(promises);
+    //   for (id in result){
+    //     if(result[id].data.analyzedInstructions.length === 0){
+    //       recipeWithoutInstruction = false;
+    //     }
+    //   }
+    // }
+    // let recipes = getIdsFromResult(search_response.data.recipes)
+    let index
+    let recipes = []
+    for (index = 0; index < numberToRetrieve; index++)
+    {
+      recipes.push(Math.floor(Math.random() * 10) + 10000000);
     }
-    let recipes = getIdsFromResult(search_response.data.recipes)
-    res.send(recipes );
+    res.send(recipes);
   } catch (error) {
     next(error);
   }
