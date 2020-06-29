@@ -9,7 +9,12 @@ const cors = require("cors");
 
 var app = express();
 
-app.use(cors());
+const corsConfig = {
+    origin: true,
+    credentials: true
+};
+app.use(cors(corsConfig));
+app.options("*",cors(corsConfig));
 
 app.use(logger("dev")); //logger
 app.use(express.json()); // parse application/json
@@ -18,8 +23,11 @@ app.use(
     cookieName: process.env.COOKIE_NAME, // the cookie key name
     secret: process.env.COOKIE_SECRET, // the encryption key
     duration: 20 * 60 * 1000, // expired after 20 min
-    activeDuration: 0 // if expiresIn < activeDuration,
+    activeDuration: 0, // if expiresIn < activeDuration,
     //the session will be extended by activeDuration milliseconds
+    cookie: {
+        httpOnly: false
+    }
   })
 );
 app.use(express.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
@@ -37,7 +45,8 @@ app.use(function (req, res, next) {
     DButils.execQuery("SELECT username FROM users")
       .then((users) => {
         if (users.find((x) => x.username === req.ass_session.username)) {
-          req.username = req.ass_session.username;
+            console.log("Setting user to request")
+            req.username = req.ass_session.username;
         }
         next();
       })

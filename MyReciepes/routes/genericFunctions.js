@@ -115,7 +115,7 @@ async function getRecipeInfo(id) {
 async function updateValueForUserAndRecipe(db_table_name, recId, username) {
     if (username) {
         await DButils.execQuery(
-            `INSERT INTO ${db_table_name} VALUES ('${username}', '${recId}')`
+            `INSERT INTO ${db_table_name} (username, recipeId) VALUES ('${username}', '${recId}')`
         );
     }
 }

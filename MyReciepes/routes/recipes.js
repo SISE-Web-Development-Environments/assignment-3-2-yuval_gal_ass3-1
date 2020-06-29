@@ -12,24 +12,41 @@ router.get("/", (req, res) => res.send("im here"));
 router.get("/preview/recId/:recId", async (req, res, next) => {
   try {
     let { recId } = req.params;
-    let array = []
-    array.push(recId)
-    let recipeDetails = await generic.get_recipes_details_from_db_by_IDs(array)
     //let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, popularity} = await generic.getRecipeInfoOurVersion(recId);
     //  let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recId, req.username);
-    // let promises = [];
-    // if(recId < 10000000) {
-    //   promises.push(generic.getRecipeInfoOurVersion(recId));
-    //   promises.push(generic.getWatchAndFavorite(recId, req.username));
-    // }
-    // else
-    // {
-    //   res.status(404).send();
-    // }
-    // let result = await Promise.all(promises);
-    // let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
-    // let {watchedRecipe, savedRecipe} = result[1];
+    let promises = [];
+    if(recId < 10000000) {
+      promises.push(generic.getRecipeInfoOurVersion(recId));
+      promises.push(generic.getWatchAndFavorite(recId, req.username));
+    }
+    else
+    {
+      let array_of_id = [];
+      array_of_id.push(recId);
+      promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
+      promises.push(generic.getWatchAndFavorite(recId, req.username));
+    }
+    let result = await Promise.all(promises);
+    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
+    let {watchedRecipe, savedRecipe} = result[1];
     // res.send({ data: recipe.data})
+    res.send({
+      id: id,
+      image_url: image_url,
+      title: title,
+      prepTime: prepTime,
+      popularity: popularity,
+      vegan: vegan,
+      vegetarian: vegetarian,
+      glutenFree: glutenFree,
+      url: url,
+      watched: watchedRecipe,
+      saved: savedRecipe
+    });
+
+    // let array = []
+    // array.push(recId)
+    // let recipeDetails = await generic.get_recipes_details_from_db_by_IDs(array)
     /**
      * {
      * "id": 65463,
@@ -45,19 +62,19 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
      * "saved": false
      * }
      */
-    res.send({
-      id: recipeDetails[0].id,
-      image_url: recipeDetails[0].image_url,
-      title: recipeDetails[0].title,
-      prepTime: recipeDetails[0].prepTime,
-      popularity: recipeDetails[0].popularity,
-      vegan: recipeDetails[0].vegan,
-      vegetarian: recipeDetails[0].vegetarian,
-      glutenFree: recipeDetails[0].glutenFree,
-      url: recipeDetails[0].url,
-      watched: false,
-      saved: false
-    });
+    // res.status(200).send({
+    //   id: recipeDetails[0].id,
+    //   image_url: recipeDetails[0].image_url,
+    //   title: recipeDetails[0].title,
+    //   prepTime: recipeDetails[0].prepTime,
+    //   popularity: recipeDetails[0].popularity,
+    //   vegan: recipeDetails[0].vegan,
+    //   vegetarian: recipeDetails[0].vegetarian,
+    //   glutenFree: recipeDetails[0].glutenFree,
+    //   url: recipeDetails[0].url,
+    //   watched: false,
+    //   saved: false
+    // });
   } catch (error) {
     next(error);
   }
@@ -102,6 +119,8 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
     }
     else
     {
+      console.log("username =", username);
+      console.log("ID =", recipe_id);
       if(username)
       {
         let get_all_ids_of_user_promises = [];
@@ -124,7 +143,7 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
         }
 
       }
-      throw {status: 400, message: "Could not find the recipe ID"};
+      throw {status: 400, message: "Something Went Wrong"};
     }
 
   } catch (error) {
@@ -203,6 +222,7 @@ async function get_recipe_page_api(recipeID, username)
   if(watchedRecipe !== true){
     await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
   }
+  //TODO: add a timestamp update to the table
   let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
   return {
     id,

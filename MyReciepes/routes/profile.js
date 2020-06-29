@@ -172,8 +172,30 @@ router.get("/family_recipes", async function (req, res, next) {
   }
 });
 
-
-
+// Get the last 3 watched recipes
+router.get("/get_last_3_watched", async (req, res, next) => {
+  try {
+    const username = req.username;
+    if(username)
+    {
+      let last_3 = await DButils.execQuery(
+          `SELECT TOP 3 recipeId FROM dbo.watchedRecipes WHERE username = '${username}' ORDER BY last_watched DESC`
+      );
+      let result = [];
+      last_3.forEach((recipe) => {
+        result.push(recipe.recipeId);
+      })
+      res.status(200).send(result);
+    }
+    else
+    {
+      res.status(401);
+    }
+  }
+  catch (error) {
+    res.status(300);
+  }
+});
 
 
 router.post("/add_recipe", async (req, res, next) => {
