@@ -168,6 +168,9 @@ async function get_recipe_page_db(recipeID, username)
   if(watchedRecipe !== true){
     await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
   }
+  else {
+    await generic.updateWatchedDate(username, recipeID);
+  }
   let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[1][0];
 
   return ({
@@ -222,7 +225,9 @@ async function get_recipe_page_api(recipeID, username)
   if(watchedRecipe !== true){
     await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
   }
-  //TODO: add a timestamp update to the table
+  else {
+    await generic.updateWatchedDate(username, recipeID);
+  }
   let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
   return {
     id,

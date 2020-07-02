@@ -53,6 +53,13 @@ async function get_recipes_details_from_db_by_IDs(arrayOfIds)  {
     return recipe_array;
 }
 
+async function updateWatchedDate(username, recipe_id)
+{
+    let watchedRecipeTableName = 'watchedRecipes';
+    await DButils.execQuery(`UPDATE ${watchedRecipeTableName} SET last_watched = GETDATE() WHERE username = '${username}' AND recipeID = '${recipe_id}'`);
+}
+
+
 async function getRecipeInfoOurVersion(recId) {
     const recipe = await getRecipeInfo(recId);
     let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, servings} = recipe.data;
@@ -199,4 +206,4 @@ function getIngredientArrayFromData(recData) {
 
 
 
-module.exports = {getWatchAndFavorite, get_instructions_and_ingredients, updateValueForUserAndRecipe, getRecipesIdFromDB, getRecipeInfo, get_recipes_details_from_db_by_IDs, getRecipeInfoOurVersion}
+module.exports = {getWatchAndFavorite, get_instructions_and_ingredients, updateValueForUserAndRecipe, getRecipesIdFromDB, updateWatchedDate,getRecipeInfo, get_recipes_details_from_db_by_IDs, getRecipeInfoOurVersion}
