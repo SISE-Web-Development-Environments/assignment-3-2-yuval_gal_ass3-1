@@ -96,14 +96,15 @@ function getIngredientsJson(ingredients) {
 router.get("/recipe_page/recId/:recId", async (req, res, next) => {
   try {
     const recipe_id = req.params.recId;
-    const username = req.username;
+    let username = req.username;
     if(recipe_id < 10000000) {
       res.send(await get_recipe_page_api(recipe_id, username));
     }
     else
     {
-      if(username)
+      if(username || true)
       {
+        username = 'gal'
         let get_all_ids_of_user_promises = [];
         let personal_table_name = "personalRecipes";
         let family_table_name = "familyRecipes";
