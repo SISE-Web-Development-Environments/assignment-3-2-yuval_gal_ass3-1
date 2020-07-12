@@ -301,5 +301,24 @@ router.post("/add_recipe", async (req, res, next) => {
   }
 });
 //#endregion
-
+router.post("/add_to_favorite", async (req, res, next) => {
+  try {
+    const username = req.username;
+    let {recipeId } = req.body.params;
+    console.log(req.body)
+    console.log(recipeId);
+    if ( recipeId === undefined) {
+      throw {status: 400, message: "Failed to add Recipe to favorites"};
+    }
+    const table_name = "favoriteRecipes";
+    let added_recipe = await DButils.execQuery(
+        `INSERT INTO ${table_name}(username, recipeID) OUTPUT Inserted.recipeID VALUES ('${username}','${recipeId}')`
+    );
+    console.log(added_recipe);
+    res.send({ message: "Recipe added successfully", status: 201 });
+  }
+  catch (error) {
+    next(error);
+  }
+});
 module.exports = router;
