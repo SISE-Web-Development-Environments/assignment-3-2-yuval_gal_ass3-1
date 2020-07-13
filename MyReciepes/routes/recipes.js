@@ -291,6 +291,7 @@ function getRelevantData(response) {
 //#region example1 - make serach endpoint
 router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
   try {
+    console.log("search");
     const {food_name, num} = req.params;
     let checkNumber = parseInt(num);
     if ((!(checkNumber === 5 || checkNumber === 10 || checkNumber === 15))) {
@@ -305,7 +306,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     });
     searchParams.number =checkNumber;
     searchParams.query = food_name;
-    searchParams.instructionsRequire= true;
+    searchParams.instructionsRequired= true;
     searchParams.apiKey = process.env.spooncular_apiKey;
     const search_response = await axios.get(`${api_domain}/search`, {
       params: searchParams,

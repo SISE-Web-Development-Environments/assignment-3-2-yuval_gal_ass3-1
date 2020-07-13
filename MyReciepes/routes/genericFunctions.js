@@ -63,30 +63,29 @@ async function updateWatchedDate(username, recipe_id)
 async function getRecipeInfoOurVersion(recId) {
     const recipe = await getRecipeInfo(recId);
     let {id, title, vegetarian, vegan, glutenFree, preparationMinutes, sourceUrl, image, aggregateLikes, servings} = recipe.data;
+    console.log(preparationMinutes);
     let popularity = aggregateLikes;
     let num_of_dishes = servings;
     if (!id) {
         id = recId;
     }
     if (!title) {
-        title = "Unkown";
+        title = "unknown";
     }
     if (vegetarian === undefined) {
-        vegetarian = "Unkown";
+        vegetarian = false;
     }
     if (vegan === undefined) {
-        vegan = "Unkown";
+        vegan = false;
     }
     if (glutenFree === undefined) {
-        glutenFree = "Unkown";
+        glutenFree = false;
     }
     if (!preparationMinutes) {
-        preparationMinutes = "Unkown";
-    } else {
-        preparationMinutes = preparationMinutes + " min";
+        preparationMinutes = "40";
     }
     if (!sourceUrl) {
-        sourceUrl = "Unkown";
+        sourceUrl = "unknown";
     }
     if (!image) {
         image = "";
