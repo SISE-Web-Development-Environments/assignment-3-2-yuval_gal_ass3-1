@@ -13,11 +13,10 @@ router.use(function requireLogin(req, res, next) {
 
 
 
-router.get("/favorites", async function (req, res, next) {
+router.get("/favorites_recipes", async function (req, res, next) {
   try {
     const favorite_table_name = "favoriteRecipes";
     const username = req.username;
-
     let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
     if (recipe_array.length === 0)
     {
