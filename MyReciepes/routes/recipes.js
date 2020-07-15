@@ -384,33 +384,27 @@ router.get("/get_random_recipe_id",async (req, res, next) => {
     let promises = [];
     var search_response;
     let recipeWithoutInstruction = false;
-    // while (!recipeWithoutInstruction) {
-    //   recipeWithoutInstruction = true;
-    //   search_response = await axios.get(`${api_domain}/random`, {
-    //     params: {
-    //       number: numberToRetrieve,
-    //       apiKey: process.env.spooncular_apiKey
-    //     }
-    //   });
-    //   let recipe = search_response.data.recipes;
-    //   for (i in recipe) {
-    //     promises.push(generic.getRecipeInfo(recipe[i].id));
-    //   }
-    //   let result = await Promise.all(promises);
-    //   for (id in result){
-    //     if(result[id].data.analyzedInstructions.length === 0){
-    //       recipeWithoutInstruction = false;
-    //     }
-    //   }
-    // }
-    // let recipes = getIdsFromResult(search_response.data.recipes)
-    let index
-    let recipes = []
-    for (index = 0; index < numberToRetrieve; index++)
-    {
-      recipes.push(Math.floor(Math.random() * 10) + 10000000);
+    while (!recipeWithoutInstruction) {
+      recipeWithoutInstruction = true;
+      search_response = await axios.get(`${api_domain}/random`, {
+        params: {
+          number: numberToRetrieve,
+          apiKey: process.env.spooncular_apiKey
+        }
+      });
+      let recipe = search_response.data.recipes;
+      for (i in recipe) {
+        promises.push(generic.getRecipeInfo(recipe[i].id));
+      }
+      let result = await Promise.all(promises);
+      for (id in result){
+        if(result[id].data.analyzedInstructions.length === 0){
+          recipeWithoutInstruction = false;
+        }
+      }
     }
-    res.send(recipes);
+    let recipes = getIdsFromResult(search_response.data.recipes)
+    res.send(recipes );
   } catch (error) {
     next(error);
   }
