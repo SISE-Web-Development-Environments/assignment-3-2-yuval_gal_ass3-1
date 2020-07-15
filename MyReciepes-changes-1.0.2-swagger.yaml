@@ -1,0 +1,619 @@
+openapi: 3.0.0
+# Added by API Auto Mocking Plugin
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/yuval_gal/MyReciepes/1.0.2
+info:
+  description: This is a MyReciepe API
+  version: "1.0.2"
+  title: My Reciepe API
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+
+paths:
+  /recipes/getRandomRecipeId:
+    get:
+      tags:
+        - recipe
+      summary: get a random recipe id
+      description: Getting a random Recipe id from the server
+      parameters:
+        - in: query
+          name: numberToRetrieve
+          schema:
+            type: integer
+            default: 1
+            maximum: 15
+            minimum: 1
+            example: 5
+      responses:
+        '200':
+          description: recieved the following id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  example: 
+                  - 1231241
+  /recipes/preview/recId/{recId}:
+    get:
+      tags:
+        - recipe
+      summary: Previewing a Recipe by id
+      description: Previewing a Recipe by its {recId}
+      operationId: findRecipeById
+      parameters:
+        - in: path
+          required: true
+          name: recId
+          schema:
+            type: integer
+            example: 10
+          description: The id of a each recpie
+      responses:
+        '200':
+          description: Previewing the Recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/PreviewRecipe'
+                    - $ref: '#/components/schemas/watchOrSaved'
+        '400':
+          description: Could not find the recId
+          
+  /recipes/RecipePage/recId/{recId}:
+    get:
+      tags:
+        - recipe
+      summary: The page of the Recipe
+      parameters:
+        - in: path
+          required: true
+          name: recId
+          schema:
+            type: integer
+          description: The id of a single Recipe
+      security:
+        - cookieAuth: []
+      description: |
+        Viewing a Recipe by its {recId}
+      responses:
+        '200':
+          description: Viewing the Recipe
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PreviewRecipe'
+                  - $ref: '#/components/schemas/PrepInstructions'
+        '400':
+          description: Could not find the recId
+  /recipes/Search/food_name/{food_name}/num/{num_of_Recipes}:
+    get:
+      tags:
+      - recipe
+      security: 
+        - cookieAuth: []
+      parameters:
+        - in: path
+          required: true
+          name: food_name   # Note the name is the same as in the path
+          schema:
+            type: string
+          description: The name of the food the user is looking for
+        - in: path
+          name: num_of_Recipes
+          required: true
+          schema:
+            type: integer
+            default: 5
+            enum: [5,10,15]
+          description: How many Recipes will be returned
+        - in: query
+          name: cuisine
+          schema:
+            $ref: '#/components/schemas/cuisine'
+        - in: query
+          name: diet
+          schema:
+            $ref: '#/components/schemas/diet'
+        - in: query
+          name: intolerance
+          schema:
+            $ref: '#/components/schemas/intolerance'
+      responses:
+        '200':
+          description: The Search Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfRecipes'
+        '400':
+          description: Wrong parameters given
+        '410':
+          description: Didn't find any results
+      summary: Searching a Recipe or food
+      description: "A Search page in the sites, used for searching Recipes by food name 
+      or Recipe name"
+
+  /MyProfile/MyRecipes:
+    get:
+      tags:
+      - profile
+      security: 
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Owned Recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/PreviewRecipe'
+                    - $ref: '#/components/schemas/watchOrSaved'
+        '410':
+          description: Didn't find any owned Recipes
+      summary: My Created Recipes
+      description: The Page for showing the Recipes that the user created
+  
+  /MyProfile/FavoriteRecipes:
+    get:
+      tags:
+      - profile
+      security: 
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Favorite Recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/PreviewRecipe'
+                    - $ref: '#/components/schemas/watchOrSaved'
+        '410':
+          description: Didn't find any Favorite Recipes
+      summary: My Favorite Recipes
+      description: The Page for showing the Recipes that the user liked and marked as favorite
+  
+  /MyProfile/FamilyRecipes:
+    get:
+      tags:
+      - profile
+      security: 
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Family Recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FamliyRecpie'
+        '410':
+          description: Didn't find any Family Recipes
+      summary: My Family Recipes
+      description: The Page for showing the Recipes that the user added as a family Recipe
+  
+  /MyProfile/addRecipe:
+    post:
+      summary: Add new Recipe
+      description: "Adding a new Recipe using a Object described below"
+      security: 
+      - cookieAuth: []
+      tags:
+      - profile
+      requestBody:
+        description: |
+          Add new Recipe
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PreviewRecipe'
+                - $ref: '#/components/schemas/PrepInstructions'
+                - anyOf:
+                  - $ref: '#/components/schemas/FamilyOriginParams'
+      responses:
+        '200':
+          description: Recipe created successfully
+        '401':
+          description: Failed to create Recipe   
+          
+  /user/addRecipeToFavorites:
+    post:
+      summary: Add a Recipe to the favorites
+      description: "Adding a Recipe by ID to the favorites"
+      security: 
+        - cookieAuth: []
+      tags:
+      - user
+      requestBody:
+        description: |
+          Add a Recipe to the favorites
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              description: Recipe ID
+              example: 4321
+      responses:
+        '200':
+          description: Recipe is already in your favorites
+        '201':
+          description: Recipe added successfully
+        '403':
+          description: User is not logged in   
+        '400':
+          description: Missing recipe id value   
+  
+  /user/Register:
+    post:
+      tags:
+      - user
+      summary: registration
+      description: |
+          Used for registering users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Failed to create
+        '409':
+          description: Failed to create user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Username taken"
+  
+  /user/logout:
+    post:
+      tags:
+        - user
+      summary: logout from the site
+      description: |
+        Used for logging out users
+      security: 
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout Successfully
+        '401':
+          description: Logout Failed
+  /user/Login:
+    post:
+      tags:
+        - user
+      summary: login to the site
+      description: |
+          Used for logining in users 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: Logined Successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: "johnDoe"
+          headers: 
+            Set-Cookie:
+              schema: 
+                type: string
+                example: MYRecipeSID=abcde12345
+        '401':
+          description: Failed to login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Username or Password is incorrect"
+          
+components:
+  schemas:
+    PreviewRecipe:
+      description: "Preview of Recipe in the system."
+      type: object
+      required: 
+        - id
+        - image_url
+        - title
+        - prepTime
+        - popularity
+        - vegan
+        - vegeterian
+        - glutenFree
+        - url
+      properties:
+        id:
+          type: integer
+          example: 4213423423
+        image_url:
+          type: string
+          format: image-name.{jpg,png,jpeg}/
+          example: 
+          - chocolate-cake.png
+          - chocolate-cake.jpg
+          - chocolate-cake.jpeg
+        title:
+          type: string
+          example: Chocolate Cake
+        prepTime:
+          type: string
+          format: time
+          example: 40 min
+        popularity:
+          type: integer
+          example: 100
+        vegan:
+          type: boolean
+          default: false
+          example: false
+        vegeterian:
+          type: boolean
+          example: true
+        glutenFree:
+          type: boolean
+          example: false
+        url:
+          type: string
+          format: url
+          example: 
+      example:
+        id: 2
+        image_url: chocolate-cake.png
+        title: Chocolate Cake
+        prepTime: 40 min
+        popularity: 100
+        vegan: false
+        vegeterian: true
+        glutenFree: true
+        url: 'http://my.domain.com/chocolate-cake/'
+    PrepInstructions:
+      type: object
+      required: 
+        - num_of_steps
+        - instructions
+        - ingredients
+        - num_of_dishes
+      properties:
+        instructions:
+          type: array
+          items:
+            type: string
+          example: ["Step1: break eggs","Step2: mix with flour", "Step3: bake in 180 degrees"]
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+          example: 
+            - name: eggs
+              count: 2
+        num_of_dishes:
+          type: integer
+          example: 2
+      example: 
+        instructions:
+          - 'Step1: break eggs'
+          - 'Step2: mix with flour'
+          - 'Step3: bake in 180 degrees'
+        ingredients:
+          - {
+            name: eggs,
+            count: 2
+          }
+        num_of_dishes: 2
+                      
+    ArrayOfRecipes:
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/PreviewRecipe'
+          - $ref: '#/components/schemas/PrepInstructions'
+    FamliyRecpie:
+      allOf:
+         - $ref: '#/components/schemas/PreviewRecipe'
+         - $ref: '#/components/schemas/PrepInstructions'
+         - $ref: '#/components/schemas/FamilyOriginParams'
+    FamilyOriginParams:
+      type: object
+      required:
+        - from_whom
+        - special_time
+      properties:
+         from_whom:
+          type: string
+          enum: [Grandma, Grandpa, Aunt, Uncle, Mom, Dad]
+          example: Grandma
+         special_time:
+          type: string
+          example: Pass-over
+      example: 
+        from_whom: Grandma
+        special_time: Pass-over
+    # AboutPage:
+    #   type: object
+    #   required:
+    #     - developers-information
+    #     - old_ass_links
+    #     - project-information
+    #   properties:
+    #     developers-information:
+    #       type: string
+    #       example: Jhon Doe SN 3219312
+    #     old_ass_links:
+    #       type: string
+    #       format: url
+    #       example: 'https://github.com/Ass1'
+    #     project-information:
+    #     type: string
+    #     example: The First Project of his name
+    Login:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: johnDoe
+        password:
+          type: string
+          format: password
+          example: Mashu123!      
+    watchOrSaved:
+      type: object
+      required:
+        - id
+        - watched
+        - saved
+      properties:
+        watched:
+          type: boolean
+        saved:
+          type: boolean
+      example:
+        watched: true
+        saved: false
+    User:
+      type: object
+      required:
+        - username
+        - firstName
+        - lastName
+        - password
+        - email
+        - profilePic
+      properties:
+        username:
+          type: string
+          example: johnDoe
+          minLength: 3
+          maxLength: 8
+          pattern: "[a-z,A-Z]"
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        password:
+          type: string
+          format: password
+          minLength: 5
+          maxLength: 10
+          description: "1 number, 1 lowercase, 1 uppercase, 1 special character"
+          example: Mashu123!
+        email:
+          type: string
+          format: email
+          example: john.doe@gmail.com
+        profilePic:
+          type: string
+          format: url
+          example: 'http://res.cloudinary.com/demo/image/upload/w_250,h_250,c_thumb,g_face,r_max,e_saturation:50/woman.jpg'
+    cuisine:
+      type: string
+      enum: 
+        - African
+        - American
+        - British
+        - Cajun
+        - Caribbean
+        - Chinese
+        - Eastern European
+        - European
+        - French
+        - German
+        - Greek
+        - Indian
+        - Irish
+        - Italian
+        - Japanese
+        - Jewish
+        - Korean
+        - Latin American
+        - Mediterranean
+        - Mexican
+        - Middle Eastern
+        - Nordic
+        - Southern
+        - Spanish
+        - Thai
+        - Vietnamese
+    diet:
+      type: string
+      enum: 
+        - Gluten Free
+        - Ketogenic
+        - Vegetarian
+        - Lacto-Vegetarian
+        - Ovo-Vegetarian
+        - Vegan
+        - Pescetarian
+        - Paleo
+        - Primal
+        - Whole30
+    intolerance:
+      type: string
+      enum: 
+        - Dairy
+        - Egg
+        - Gluten
+        - Grain
+        - Peanut
+        - Seafood
+        - Sesame
+        - Shellfish
+        - Soy
+        - Sulfite
+        - Tree Nut
+        - Wheat
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: MYRecipeSID 
+security:
+  - cookieAuth: []
