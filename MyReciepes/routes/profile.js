@@ -171,6 +171,7 @@ router.get("/family_recipes", async function (req, res, next) {
   }
 });
 
+
 // Get the last 3 watched recipes
 router.get("/get_last_3_watched", async (req, res, next) => {
   try {
