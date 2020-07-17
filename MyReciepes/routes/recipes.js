@@ -21,7 +21,10 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
     }
     else
     {
-      res.status(404).send();
+      let array_of_id = [];
+      array_of_id.push(recId);
+      promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
+      promises.push(generic.getWatchAndFavorite(recId, req.username));
     }
     let result = await Promise.all(promises);
     let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
@@ -40,6 +43,38 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       watched: watchedRecipe,
       saved: savedRecipe
     });
+
+    // let array = []
+    // array.push(recId)
+    // let recipeDetails = await generic.get_recipes_details_from_db_by_IDs(array)
+    /**
+     * {
+     * "id": 65463,
+     * "image_url": "https://spoonacular.com/recipeImages/65463-556x370.jpg",
+     * "title": "Oreo Muffins",
+     * "prepTime": "Unkown",
+     * "popularity": 5,
+     * "vegan": false,
+     * "vegetarian": true,
+     * "glutenFree": false,
+     * "url": "http://foodbabbles.com/2012/01/02/oreo-muffins/",
+     * "watched": false,
+     * "saved": false
+     * }
+     */
+    // res.status(200).send({
+    //   id: recipeDetails[0].id,
+    //   image_url: recipeDetails[0].image_url,
+    //   title: recipeDetails[0].title,
+    //   prepTime: recipeDetails[0].prepTime,
+    //   popularity: recipeDetails[0].popularity,
+    //   vegan: recipeDetails[0].vegan,
+    //   vegetarian: recipeDetails[0].vegetarian,
+    //   glutenFree: recipeDetails[0].glutenFree,
+    //   url: recipeDetails[0].url,
+    //   watched: false,
+    //   saved: false
+    // });
   } catch (error) {
     next(error);
   }
@@ -84,6 +119,8 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
     }
     else
     {
+      console.log("username =", username);
+      console.log("ID =", recipe_id);
       if(username)
       {
         let get_all_ids_of_user_promises = [];
@@ -106,7 +143,7 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
         }
 
       }
-      throw {status: 400, message: "Could not find the recipe ID"};
+      throw {status: 400, message: "Something Went Wrong"};
     }
 
   } catch (error) {
@@ -130,6 +167,9 @@ async function get_recipe_page_db(recipeID, username)
   const watchedRecipeTableName = "watchedRecipes";
   if(watchedRecipe !== true){
     await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
+  }
+  else {
+    await generic.updateWatchedDate(username, recipeID);
   }
   let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[1][0];
 
@@ -184,6 +224,9 @@ async function get_recipe_page_api(recipeID, username)
   const watchedRecipeTableName = "watchedRecipes";
   if(watchedRecipe !== true){
     await generic.updateValueForUserAndRecipe(watchedRecipeTableName, recipeID, username);
+  }
+  else {
+    await generic.updateWatchedDate(username, recipeID);
   }
   let { id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity, num_of_dishes } = result[3];
   return {
@@ -248,6 +291,7 @@ function getRelevantData(response) {
 //#region example1 - make serach endpoint
 router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
   try {
+    console.log("search");
     const {food_name, num} = req.params;
     let checkNumber = parseInt(num);
     if ((!(checkNumber === 5 || checkNumber === 10 || checkNumber === 15))) {
@@ -262,7 +306,7 @@ router.get("/search/food_name/:food_name/num/:num", async (req, res, next) => {
     });
     searchParams.number =checkNumber;
     searchParams.query = food_name;
-    searchParams.instructionsRequire= true;
+    searchParams.instructionsRequired= true;
     searchParams.apiKey = process.env.spooncular_apiKey;
     const search_response = await axios.get(`${api_domain}/search`, {
       params: searchParams,

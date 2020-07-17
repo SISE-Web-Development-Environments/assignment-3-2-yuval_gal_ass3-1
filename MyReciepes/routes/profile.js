@@ -13,11 +13,10 @@ router.use(function requireLogin(req, res, next) {
 
 
 
-router.get("/favorites", async function (req, res, next) {
+router.get("/favorites_recipes", async function (req, res, next) {
   try {
     const favorite_table_name = "favoriteRecipes";
     const username = req.username;
-
     let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
     if (recipe_array.length === 0)
     {
@@ -173,7 +172,30 @@ router.get("/family_recipes", async function (req, res, next) {
 });
 
 
-
+// Get the last 3 watched recipes
+router.get("/get_last_3_watched", async (req, res, next) => {
+  try {
+    const username = req.username;
+    if(username)
+    {
+      let last_3 = await DButils.execQuery(
+          `SELECT TOP 3 recipeId FROM dbo.watchedRecipes WHERE username = '${username}' ORDER BY last_watched DESC`
+      );
+      let result = [];
+      last_3.forEach((recipe) => {
+        result.push(recipe.recipeId);
+      })
+      res.status(200).send(result);
+    }
+    else
+    {
+      res.status(401);
+    }
+  }
+  catch (error) {
+    res.status(300);
+  }
+});
 
 
 router.post("/add_recipe", async (req, res, next) => {
@@ -279,5 +301,24 @@ router.post("/add_recipe", async (req, res, next) => {
   }
 });
 //#endregion
-
+router.post("/add_to_favorite", async (req, res, next) => {
+  try {
+    const username = req.username;
+    let {recipeId } = req.body.params;
+    console.log(req.body)
+    console.log(recipeId);
+    if ( recipeId === undefined) {
+      throw {status: 400, message: "Failed to add Recipe to favorites"};
+    }
+    const table_name = "favoriteRecipes";
+    let added_recipe = await DButils.execQuery(
+        `INSERT INTO ${table_name}(username, recipeID) OUTPUT Inserted.recipeID VALUES ('${username}','${recipeId}')`
+    );
+    console.log(added_recipe);
+    res.send({ message: "Recipe added successfully", status: 201 });
+  }
+  catch (error) {
+    next(error);
+  }
+});
 module.exports = router;

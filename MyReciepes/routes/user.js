@@ -70,6 +70,20 @@ router.post("/Logout", function (req, res) {
 
 });
 
+router.get("/get_profile_pic", async function (req, res, next) {
+  try{
+    const username = req.username;
+    let profPic = await DButils.execQuery(`SELECT profilePicUrl FROM users where username like '${username}'`)
+    console.log(profPic[0].profilePicUrl);
+    res.status(200).send({
+      url: profPic[0].profilePicUrl
+    })
+  }
+  catch(err)
+  {
+    throw {status: 401, message: "user must be logged in"}
+  }
+})
 
 router.post("/save_recipe_to_favorites", async function (req,res,next){
   try{
