@@ -65,7 +65,7 @@ app.use("/recipes", recipes);
 
 app.use(function (err, req, res, next) {
   console.error(err);
-  res.status(err.status || 500).send({ message: err.message, success: false });
+  res.status(err.status || 500).send({ message: err.message });
 });
 
 const server = app.listen(port, () => {

@@ -5,7 +5,7 @@ const generic = require("./genericFunctions");
 
 router.use(function requireLogin(req, res, next) {
   if (!req.username) {
-    next({ status: 401, message: "unauthorized" });
+    next({ status: 403, message: "Unauthorized" });
   } else {
     next();
   }
@@ -17,20 +17,27 @@ router.get("/favorites_recipes", async function (req, res, next) {
   try {
     const favorite_table_name = "favoriteRecipes";
     const username = req.username;
-    let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
-    if (recipe_array.length === 0)
-    {
-      throw {status: 410, message: "Didn't find any Favorite Recipes"};
-    }
+    try{
 
-    for (let recipe of recipe_array) {
-      // get the instructions and ingredients of the current recipe
-      let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe.id, username);
-      recipe.watched = watchedRecipe;
-      recipe.saved = savedRecipe;
-    }
+      let recipe_array = await get_all_relevant_recipes(username, favorite_table_name);
+      if (recipe_array.length === 0)
+      {
+        throw {status: 410, message: "Didn't find any Favorite Recipes"};
+      }
 
-    res.status(200).send(JSON.stringify(recipe_array));
+      for (let recipe of recipe_array) {
+        // get the instructions and ingredients of the current recipe
+        let {watchedRecipe, savedRecipe} = await generic.getWatchAndFavorite(recipe.id, username);
+        recipe.watched = watchedRecipe;
+        recipe.saved = savedRecipe;
+      }
+
+      res.status(200).send(JSON.stringify(recipe_array));
+    }
+    catch (err) {
+      //TODO: remove this if not needed
+      res.status(500).send({message: "API Key is no longer available"})
+    }
   }
   catch (error) {
     next(error);
@@ -137,6 +144,10 @@ router.get("/family_recipes", async function (req, res, next) {
     const family_table_name = "familyRecipes";
 
     let allFamilyRecipesIDs = await generic.getRecipesIdFromDB(family_table_name, username);
+    if (allFamilyRecipesIDs.length === 0)
+    {
+      throw {status: 410, message: "Didn't find any Family Recipes"};
+    }
 
     let promises = [];
     promises.push(generic.get_recipes_details_from_db_by_IDs(allFamilyRecipesIDs));
@@ -153,13 +164,12 @@ router.get("/family_recipes", async function (req, res, next) {
 
     let index;
     for (index = 0; index < result_from_promises[1].length; index++) {
-      let {recipeID, from_whom, special_time, family_image} = result_from_promises[1][index];
+      let {recipeID, from_whom, special_time} = result_from_promises[1][index];
       for (let recipe of result_from_promises[0]) {
         if (recipe.id === parseInt(recipeID)) {
 
           recipe.from_whom = from_whom;
           recipe.special_time = special_time;
-          recipe.family_image = family_image;
         }
       }
     }
@@ -247,7 +257,7 @@ router.post("/add_recipe", async (req, res, next) => {
     const instruction_table_name = "recipeInstructions";
     const ingredient_table_name = "recipeIngredients";
     let added_recipe = await DButils.execQuery(
-      `INSERT INTO ${our_db_table_name}(image_url, title, prepTime, popularity,vegan ,vegetarian, glutenFree, url, num_of_dishes) OUTPUT Inserted.recipeID VALUES ('${image_url}','${title}','${prepTime}', '${popularity}','${vegan}','${vegeterian}','${glutenFree}','${url}', '${num_of_dishes}')`
+        `INSERT INTO ${our_db_table_name}(image_url, title, prepTime, popularity,vegan ,vegetarian, glutenFree, url, num_of_dishes) OUTPUT Inserted.recipeID VALUES ('${image_url}','${title}','${prepTime}', '${popularity}','${vegan}','${vegeterian}','${glutenFree}','${url}', '${num_of_dishes}')`
     );
 
     let id = added_recipe[0].recipeID;
@@ -270,7 +280,7 @@ router.post("/add_recipe", async (req, res, next) => {
       let name = ingredients[ingredient_index].name;
       let count = ingredients[ingredient_index].count;
       add_ingredient_promises.push(DButils.execQuery(
-        `INSERT INTO ${ingredient_table_name}(name, count, recipeID) VALUES ('${name}', '${count}', ${id})`
+          `INSERT INTO ${ingredient_table_name}(name, count, recipeID) VALUES ('${name}', '${count}', ${id})`
       ));
     }
     await Promise.all(add_ingredient_promises);
@@ -294,7 +304,7 @@ router.post("/add_recipe", async (req, res, next) => {
 
 
 
-    res.send({ message: "Recipe added successfully", status: 201 });
+    res.status(201).send({ message: "Recipe added successfully" });
   }
   catch (error) {
     next(error);
@@ -304,21 +314,43 @@ router.post("/add_recipe", async (req, res, next) => {
 router.post("/add_to_favorite", async (req, res, next) => {
   try {
     const username = req.username;
-    let {recipeId } = req.body.params;
+    let {recipeId } = req.body;
     console.log(req.body)
     console.log(recipeId);
     if ( recipeId === undefined) {
-      throw {status: 400, message: "Failed to add Recipe to favorites"};
+      throw {status: 400, message: "Missing recipe id value"};
     }
     const table_name = "favoriteRecipes";
-    let added_recipe = await DButils.execQuery(
-        `INSERT INTO ${table_name}(username, recipeID) OUTPUT Inserted.recipeID VALUES ('${username}','${recipeId}')`
-    );
-    console.log(added_recipe);
-    res.send({ message: "Recipe added successfully", status: 201 });
+    try{
+      let added_recipe = await DButils.execQuery(
+          `INSERT INTO ${table_name}(username, recipeID) OUTPUT Inserted.recipeID VALUES ('${username}','${recipeId}')`
+      );
+      console.log(added_recipe);
+      res.status(201).send({ message: "Recipe added successfully" });
+    }
+    catch (err) {
+      res.status(200).send({message: "Recipe is already in your favorites"});
+    }
+
+
   }
   catch (error) {
     next(error);
   }
 });
+
+router.get("/get_profile_pic", async function (req, res, next) {
+  try{
+    const username = req.username;
+    let profPic = await DButils.execQuery(`SELECT profilePicUrl FROM users where username like '${username}'`)
+    res.status(200).send({
+      url: profPic[0].profilePicUrl
+    })
+  }
+  catch(err)
+  {
+    throw {status: 401, message: "user must be logged in"}
+  }
+})
+
 module.exports = router;
