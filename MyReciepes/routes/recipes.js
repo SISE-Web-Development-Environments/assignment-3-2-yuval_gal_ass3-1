@@ -26,55 +26,29 @@ router.get("/preview/recId/:recId", async (req, res, next) => {
       promises.push(generic.get_recipes_details_from_db_by_IDs(array_of_id));
       promises.push(generic.getWatchAndFavorite(recId, req.username));
     }
-    let result = await Promise.all(promises);
-    let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
-    let {watchedRecipe, savedRecipe} = result[1];
-    // res.send({ data: recipe.data})
-    res.send({
-      id: id,
-      image_url: image_url,
-      title: title,
-      prepTime: prepTime,
-      popularity: popularity,
-      vegan: vegan,
-      vegetarian: vegetarian,
-      glutenFree: glutenFree,
-      url: url,
-      watched: watchedRecipe,
-      saved: savedRecipe
-    });
+    try {
+      let result = await Promise.all(promises);
+      let {id, title, vegetarian, vegan, glutenFree, prepTime, url, image_url, popularity} = ((result[0] instanceof Array) ? result[0][0] : result[0])
+      let {watchedRecipe, savedRecipe} = result[1];
 
-    // let array = []
-    // array.push(recId)
-    // let recipeDetails = await generic.get_recipes_details_from_db_by_IDs(array)
-    /**
-     * {
-     * "id": 65463,
-     * "image_url": "https://spoonacular.com/recipeImages/65463-556x370.jpg",
-     * "title": "Oreo Muffins",
-     * "prepTime": "Unkown",
-     * "popularity": 5,
-     * "vegan": false,
-     * "vegetarian": true,
-     * "glutenFree": false,
-     * "url": "http://foodbabbles.com/2012/01/02/oreo-muffins/",
-     * "watched": false,
-     * "saved": false
-     * }
-     */
-    // res.status(200).send({
-    //   id: recipeDetails[0].id,
-    //   image_url: recipeDetails[0].image_url,
-    //   title: recipeDetails[0].title,
-    //   prepTime: recipeDetails[0].prepTime,
-    //   popularity: recipeDetails[0].popularity,
-    //   vegan: recipeDetails[0].vegan,
-    //   vegetarian: recipeDetails[0].vegetarian,
-    //   glutenFree: recipeDetails[0].glutenFree,
-    //   url: recipeDetails[0].url,
-    //   watched: false,
-    //   saved: false
-    // });
+      res.send({
+        id: id,
+        image_url: image_url,
+        title: title,
+        prepTime: prepTime,
+        popularity: popularity,
+        vegan: vegan,
+        vegetarian: vegetarian,
+        glutenFree: glutenFree,
+        url: url,
+        watched: watchedRecipe,
+        saved: savedRecipe
+      });
+    }
+    catch (error) {
+      res.status(400).send({message: "Could not find the recId"});
+    }
+
   } catch (error) {
     next(error);
   }
@@ -115,7 +89,12 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
     const recipe_id = req.params.recId;
     const username = req.username;
     if(recipe_id < 10000000) {
-      res.send(await get_recipe_page_api(recipe_id, username));
+      try {
+        res.send(await get_recipe_page_api(recipe_id, username));
+      }
+      catch (err) {
+        res.status(400).send({message: "Could bla blabla"})
+      }
     }
     else
     {
@@ -143,7 +122,12 @@ router.get("/recipe_page/recId/:recId", async (req, res, next) => {
         }
 
       }
-      throw {status: 400, message: "Something Went Wrong"};
+      else
+      {
+        res.status(403).send({message: "Unauthorized"})
+        return;
+      }
+      throw {status: 400, message: "Could not find the recipe ID"};
     }
 
   } catch (error) {
@@ -183,8 +167,8 @@ async function get_recipe_page_db(recipeID, username)
     vegetarian,
     glutenFree,
     url,
-    watchedRecipe,
-    savedRecipe,
+    watched: watchedRecipe,
+    saved: savedRecipe,
     num_of_dishes,
     ingredients,
     instructions});
@@ -240,8 +224,8 @@ async function get_recipe_page_api(recipeID, username)
     image_url,
     popularity,
     num_of_dishes,
-    watchedRecipe,
-    savedRecipe,
+    watched: watchedRecipe,
+    saved: savedRecipe,
     ingredients: jsonIngredients ,
     instructions: jsonSteps
   }
@@ -379,7 +363,7 @@ router.get("/get_random_recipe_id",async (req, res, next) => {
     let { numberToRetrieve } = req.query;
     if(!numberToRetrieve)
     {
-      numberToRetrieve = 1;
+      numberToRetrieve = 3;
     }
     let promises = [];
     var search_response;
